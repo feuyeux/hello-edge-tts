@@ -1,0 +1,96 @@
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/hello-edge-tts-python"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "@me"
+    assignees:
+      - "@me"
+    commit-message:
+      prefix: "chore(python)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+
+  # Java dependencies
+  - package-ecosystem: "maven"
+    directory: "/hello-edge-tts-java"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "@me"
+    assignees:
+      - "@me"
+    commit-message:
+      prefix: "chore(java)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "java"
+
+  # Dart dependencies
+  - package-ecosystem: "pub"
+    directory: "/hello-edge-tts-dart"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "@me"
+    assignees:
+      - "@me"
+    commit-message:
+      prefix: "chore(dart)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "dart"
+
+  # Rust dependencies
+  - package-ecosystem: "cargo"
+    directory: "/hello-edge-tts-rust"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "@me"
+    assignees:
+      - "@me"
+    commit-message:
+      prefix: "chore(rust)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "rust"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "@me"
+    assignees:
+      - "@me"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"

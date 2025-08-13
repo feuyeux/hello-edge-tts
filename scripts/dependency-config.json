@@ -1,0 +1,60 @@
+{
+  "updateSchedule": {
+    "frequency": "weekly",
+    "day": "monday",
+    "time": "09:00"
+  },
+  "languages": {
+    "python": {
+      "enabled": true,
+      "directory": "hello-edge-tts-python",
+      "files": ["requirements.txt", "requirements.in"],
+      "tools": ["pip-tools", "safety"],
+      "updateStrategy": "conservative"
+    },
+    "java": {
+      "enabled": true,
+      "directory": "hello-edge-tts-java",
+      "files": ["pom.xml"],
+      "tools": ["maven-versions-plugin", "owasp-dependency-check"],
+      "updateStrategy": "conservative"
+    },
+    "dart": {
+      "enabled": true,
+      "directory": "hello-edge-tts-dart",
+      "files": ["pubspec.yaml", "pubspec.lock"],
+      "tools": ["dart-pub"],
+      "updateStrategy": "conservative"
+    },
+    "rust": {
+      "enabled": true,
+      "directory": "hello-edge-tts-rust",
+      "files": ["Cargo.toml", "Cargo.lock"],
+      "tools": ["cargo-edit", "cargo-audit"],
+      "updateStrategy": "conservative"
+    }
+  },
+  "security": {
+    "enabled": true,
+    "auditFrequency": "weekly",
+    "createIssuesOnVulnerabilities": true,
+    "severityThreshold": "medium"
+  },
+  "pullRequests": {
+    "autoMerge": false,
+    "requireReviews": true,
+    "labels": ["dependencies", "automated"],
+    "assignees": ["@me"],
+    "maxOpenPRs": 5
+  },
+  "notifications": {
+    "slack": {
+      "enabled": false,
+      "webhook": ""
+    },
+    "email": {
+      "enabled": false,
+      "recipients": []
+    }
+  }
+}

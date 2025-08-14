@@ -1,15 +1,12 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM Hello Edge TTS - Multi-language Build Script for Windows
-REM This script builds all language implementations
-
-echo 🚀 Hello Edge TTS - Multi-language Build Script
+echo Hello Edge TTS - Multi-language Build Script for Windows
 echo ================================================
 
 set "failed_builds="
 
-REM Function to check if command exists
+REM Check for Python
 where python >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] Python not found. Please install Python 3.8 or later.
@@ -19,7 +16,7 @@ if %errorlevel% neq 0 (
 
 REM Build Python implementation
 echo [INFO] Building Python implementation...
-cd python
+cd hello-edge-tts-python
 
 REM Create virtual environment if it doesn't exist
 if not exist ".venv" (
@@ -27,8 +24,25 @@ if not exist ".venv" (
     python -m venv .venv
 )
 
-REM Activate virtual environment
-call .venv\Scripts\activate.bat
+REM For WSL/Unix-style venv, create Scripts directory and batch files if missing
+if exist ".venv\bin" if not exist ".venv\Scripts" (
+    echo [INFO] Creating Windows-compatible Scripts directory...
+    mkdir ".venv\Scripts"
+    copy ".venv\bin\python" ".venv\Scripts\python.exe" >nul 2>&1
+    copy ".venv\bin\pip" ".venv\Scripts\pip.exe" >nul 2>&1
+    echo @echo off > ".venv\Scripts\activate.bat"
+    echo set "VIRTUAL_ENV=%CD%\.venv" >> ".venv\Scripts\activate.bat"
+    echo set "PATH=%CD%\.venv\Scripts;%PATH%" >> ".venv\Scripts\activate.bat"
+)
+
+REM Activate virtual environment - check both Windows and Unix style
+if exist ".venv\Scripts\activate.bat" (
+    call .venv\Scripts\activate.bat
+) else (
+    echo [ERROR] Virtual environment activation script not found
+    set "failed_builds=!failed_builds! Python"
+    goto :skip_python
+)
 
 REM Upgrade pip
 python -m pip install --upgrade pip
@@ -71,7 +85,7 @@ if %errorlevel% neq 0 (
 
 REM Build Dart implementation
 echo [INFO] Building Dart implementation...
-cd dart
+cd hello-edge-tts-dart
 
 REM Get dependencies
 echo [INFO] Getting Dart dependencies...
@@ -111,7 +125,7 @@ if %errorlevel% neq 0 (
 
 REM Build Rust implementation
 echo [INFO] Building Rust implementation...
-cd rust
+cd hello-edge-tts-rust
 
 REM Build in release mode
 echo [INFO] Building Rust project in release mode...
@@ -147,7 +161,7 @@ if %errorlevel% neq 0 (
 
 REM Build Java implementation
 echo [INFO] Building Java implementation...
-cd java
+cd hello-edge-tts-java
 
 REM Clean and compile
 echo [INFO] Cleaning and compiling Java project...
@@ -186,7 +200,7 @@ echo [SUCCESS] Java build completed successfully!
 echo.
 echo ================================================
 if "!failed_builds!"=="" (
-    echo [SUCCESS] All builds completed successfully! 🎉
+    echo [SUCCESS] All builds completed successfully!
 ) else (
     echo [ERROR] Some builds failed:!failed_builds!
     exit /b 1

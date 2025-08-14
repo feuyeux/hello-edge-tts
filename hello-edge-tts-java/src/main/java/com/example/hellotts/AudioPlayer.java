@@ -16,14 +16,15 @@ import java.util.concurrent.Executors;
  * and format conversion capabilities.
  */
 public class AudioPlayer {
-    
+
     private static final int BUFFER_SIZE = 4096;
     private final ExecutorService executorService;
     private volatile boolean isPlaying = false;
     private Clip currentClip;
-    
+
     /**
-     * Creates a new AudioPlayer instance with a dedicated thread pool for audio operations.
+     * Creates a new AudioPlayer instance with a dedicated thread pool for audio
+     * operations.
      */
     public AudioPlayer() {
         this.executorService = Executors.newSingleThreadExecutor(r -> {
@@ -32,13 +33,15 @@ public class AudioPlayer {
             return t;
         });
     }
-    
+
     /**
      * Plays an audio file from the specified file path.
-     * Supports WAV, AIFF, AU formats through Java's built-in audio system, and MP3 through system commands.
+     * Supports WAV, AIFF, AU formats through Java's built-in audio system, and MP3
+     * through system commands.
      *
      * @param filename The path to the audio file to play
-     * @throws AudioPlayerException If the file cannot be played due to format issues or I/O errors
+     * @throws AudioPlayerException     If the file cannot be played due to format
+     *                                  issues or I/O errors
      * @throws IllegalArgumentException If the filename is null or empty
      */
     public void playFile(String filename) throws AudioPlayerException {
@@ -46,16 +49,16 @@ public class AudioPlayer {
         if (filename.trim().isEmpty()) {
             throw new IllegalArgumentException("Filename cannot be empty");
         }
-        
+
         Path filePath = Paths.get(filename);
         if (!Files.exists(filePath)) {
             throw new AudioPlayerException("Audio file not found: " + filename);
         }
-        
+
         if (!Files.isReadable(filePath)) {
             throw new AudioPlayerException("Audio file is not readable: " + filename);
         }
-        
+
         try {
             // Check if file is MP3 format (edge-tts generates MP3 regardless of extension)
             if (isMP3File(filePath.toFile())) {
@@ -80,7 +83,7 @@ public class AudioPlayer {
             }
             // Check for MP3 header (ID3 tag or MPEG frame sync)
             return (header[0] == 'I' && header[1] == 'D' && header[2] == '3') ||
-                   (header[0] == (byte)0xFF && (header[1] & 0xE0) == 0xE0);
+                    (header[0] == (byte) 0xFF && (header[1] & 0xE0) == 0xE0);
         } catch (Exception e) {
             return false;
         }
@@ -91,23 +94,86 @@ public class AudioPlayer {
      */
     private void playMP3WithSystemCommand(String filename) throws Exception {
         String os = System.getProperty("os.name").toLowerCase();
-        ProcessBuilder pb;
-        
+
+        // Convert to absolute path
+        File file = new File(filename);
+        String absolutePath = file.getAbsolutePath();
+
         if (os.contains("mac")) {
             // macOS
-            pb = new ProcessBuilder("afplay", filename);
+            ProcessBuilder pb = new ProcessBuilder("afplay", absolutePath);
+            Process process = pb.start();
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                throw new Exception("Audio playback failed with exit code: " + exitCode);
+            }
         } else if (os.contains("win")) {
-            // Windows
-            pb = new ProcessBuilder("powershell", "-c", 
-                "(New-Object Media.SoundPlayer '" + filename + "').PlaySync()");
+            // Windows - use the most reliable method
+            Exception lastException = null;
+
+            // Method 1: PowerShell with Windows Media Player (most reliable for MP3)
+            try {
+                String powershellCmd = String.format(
+                        "Add-Type -AssemblyName PresentationCore; " +
+                                "$player = New-Object System.Windows.Media.MediaPlayer; " +
+                                "$player.Open([System.Uri]\"%s\"); " +
+                                "$player.Play(); " +
+                                "Start-Sleep -Seconds 5; " +
+                                "$player.Close();",
+                        absolutePath.replace("\\", "\\\\"));
+
+                ProcessBuilder pb = new ProcessBuilder("powershell", "-Command", powershellCmd);
+                Process process = pb.start();
+                int exitCode = process.waitFor();
+                if (exitCode == 0) {
+                    return; // Success
+                }
+                lastException = new Exception("PowerShell MediaPlayer failed with exit code: " + exitCode);
+            } catch (Exception e) {
+                lastException = e;
+            }
+
+            // Method 2: Use system default program
+            try {
+                ProcessBuilder pb = new ProcessBuilder("cmd", "/c", "start", "/wait", "\"\"",
+                        "\"" + absolutePath + "\"");
+                Process process = pb.start();
+                int exitCode = process.waitFor();
+                if (exitCode == 0) {
+                    // Give some time for the audio to play
+                    Thread.sleep(3000);
+                    return;
+                }
+                lastException = new Exception("System default player failed with exit code: " + exitCode);
+            } catch (Exception e) {
+                lastException = e;
+            }
+
+            // Method 3: PowerShell Invoke-Item
+            try {
+                String powershellCmd = String.format("Invoke-Item \"%s\"; Start-Sleep -Seconds 3", absolutePath);
+                ProcessBuilder pb = new ProcessBuilder("powershell", "-Command", powershellCmd);
+                Process process = pb.start();
+                int exitCode = process.waitFor();
+                if (exitCode == 0) {
+                    return;
+                }
+                lastException = new Exception("PowerShell Invoke-Item failed with exit code: " + exitCode);
+            } catch (Exception e) {
+                lastException = e;
+            }
+
+            if (lastException != null) {
+                throw new Exception("All Windows playback methods failed", lastException);
+            }
         } else {
             // Linux - try multiple players
-            String[] players = {"mpg123", "mpv", "vlc", "paplay"};
+            String[] players = { "mpg123", "mpv", "vlc", "paplay" };
             boolean played = false;
-            
+
             for (String player : players) {
                 try {
-                    pb = new ProcessBuilder(player, filename);
+                    ProcessBuilder pb = new ProcessBuilder(player, absolutePath);
                     Process process = pb.start();
                     int exitCode = process.waitFor();
                     if (exitCode == 0) {
@@ -118,39 +184,32 @@ public class AudioPlayer {
                     // Try next player
                 }
             }
-            
+
             if (!played) {
                 throw new Exception("No suitable audio player found on Linux");
             }
-            return;
-        }
-        
-        Process process = pb.start();
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            throw new Exception("Audio playback failed with exit code: " + exitCode);
         }
     }
-    
+
     /**
      * Plays audio from raw byte data.
      * Attempts to detect the audio format and convert if necessary.
      *
      * @param audioData The raw audio data to play
-     * @throws AudioPlayerException If the audio data cannot be played
+     * @throws AudioPlayerException     If the audio data cannot be played
      * @throws IllegalArgumentException If the audioData is null or empty
      */
     public void playAudioData(byte[] audioData) throws AudioPlayerException {
         playAudioData(audioData, "mp3");
     }
-    
+
     /**
      * Plays audio from raw byte data with format hint.
      * Attempts to detect the audio format and convert if necessary.
      *
-     * @param audioData The raw audio data to play
+     * @param audioData  The raw audio data to play
      * @param formatHint Audio format hint (e.g., "mp3", "wav")
-     * @throws AudioPlayerException If the audio data cannot be played
+     * @throws AudioPlayerException     If the audio data cannot be played
      * @throws IllegalArgumentException If the audioData is null or empty
      */
     public void playAudioData(byte[] audioData, String formatHint) throws AudioPlayerException {
@@ -158,7 +217,7 @@ public class AudioPlayer {
         if (audioData.length == 0) {
             throw new IllegalArgumentException("Audio data cannot be empty");
         }
-        
+
         try {
             // Create a temporary file to play the audio data
             File tempFile = createTempAudioFile(audioData, formatHint);
@@ -174,7 +233,7 @@ public class AudioPlayer {
             throw new AudioPlayerException("Failed to play audio data", e);
         }
     }
-    
+
     /**
      * Plays an audio file asynchronously and returns a CompletableFuture.
      *
@@ -190,7 +249,7 @@ public class AudioPlayer {
             }
         }, executorService);
     }
-    
+
     /**
      * Plays audio data asynchronously and returns a CompletableFuture.
      *
@@ -206,7 +265,7 @@ public class AudioPlayer {
             }
         }, executorService);
     }
-    
+
     /**
      * Stops the currently playing audio if any.
      */
@@ -217,7 +276,7 @@ public class AudioPlayer {
             isPlaying = false;
         }
     }
-    
+
     /**
      * Checks if audio is currently playing.
      *
@@ -226,7 +285,7 @@ public class AudioPlayer {
     public boolean isPlaying() {
         return isPlaying && currentClip != null && currentClip.isRunning();
     }
-    
+
     /**
      * Closes the AudioPlayer and releases resources.
      * Should be called when the AudioPlayer is no longer needed.
@@ -235,7 +294,7 @@ public class AudioPlayer {
         stop();
         executorService.shutdown();
     }
-    
+
     /**
      * Internal method to play an audio file using javax.sound.sampled.
      *
@@ -244,24 +303,24 @@ public class AudioPlayer {
      */
     private void playAudioFile(File audioFile) throws AudioPlayerException {
         AudioInputStream audioInputStream = null;
-        
+
         try {
             // Stop any currently playing audio
             stop();
-            
+
             // Get audio input stream
             audioInputStream = AudioSystem.getAudioInputStream(audioFile);
             AudioFormat originalFormat = audioInputStream.getFormat();
-            
+
             // Convert to PCM if necessary
             AudioInputStream pcmStream = convertToPCM(audioInputStream, originalFormat);
-            
+
             // Get a clip resource
             currentClip = AudioSystem.getClip();
-            
+
             // Open the clip with the audio stream
             currentClip.open(pcmStream);
-            
+
             // Add a line listener to track playback completion
             currentClip.addLineListener(event -> {
                 if (event.getType() == LineEvent.Type.STOP) {
@@ -269,11 +328,11 @@ public class AudioPlayer {
                     currentClip.close();
                 }
             });
-            
+
             // Start playback
             isPlaying = true;
             currentClip.start();
-            
+
             // Wait for playback to complete
             while (currentClip.isRunning()) {
                 try {
@@ -283,7 +342,7 @@ public class AudioPlayer {
                     break;
                 }
             }
-            
+
         } catch (UnsupportedAudioFileException e) {
             throw new AudioPlayerException("Unsupported audio format: " + audioFile.getName(), e);
         } catch (IOException e) {
@@ -303,86 +362,86 @@ public class AudioPlayer {
             }
         }
     }
-    
+
     /**
      * Converts audio format to PCM if necessary for playback compatibility.
      *
      * @param audioInputStream The original audio input stream
-     * @param originalFormat The original audio format
+     * @param originalFormat   The original audio format
      * @return An audio input stream in PCM format
      * @throws AudioPlayerException If format conversion fails
      */
-    private AudioInputStream convertToPCM(AudioInputStream audioInputStream, AudioFormat originalFormat) 
+    private AudioInputStream convertToPCM(AudioInputStream audioInputStream, AudioFormat originalFormat)
             throws AudioPlayerException {
-        
+
         // If already PCM, return as-is
         if (originalFormat.getEncoding().equals(AudioFormat.Encoding.PCM_SIGNED) ||
-            originalFormat.getEncoding().equals(AudioFormat.Encoding.PCM_UNSIGNED)) {
+                originalFormat.getEncoding().equals(AudioFormat.Encoding.PCM_UNSIGNED)) {
             return audioInputStream;
         }
-        
+
         try {
             // Define target PCM format
             AudioFormat pcmFormat = new AudioFormat(
-                AudioFormat.Encoding.PCM_SIGNED,
-                originalFormat.getSampleRate(),
-                16, // 16-bit
-                originalFormat.getChannels(),
-                originalFormat.getChannels() * 2, // frame size
-                originalFormat.getSampleRate(),
-                false // little endian
+                    AudioFormat.Encoding.PCM_SIGNED,
+                    originalFormat.getSampleRate(),
+                    16, // 16-bit
+                    originalFormat.getChannels(),
+                    originalFormat.getChannels() * 2, // frame size
+                    originalFormat.getSampleRate(),
+                    false // little endian
             );
-            
+
             // Check if conversion is supported
             if (!AudioSystem.isConversionSupported(pcmFormat, originalFormat)) {
                 // Try with a more flexible format
                 pcmFormat = new AudioFormat(
-                    AudioFormat.Encoding.PCM_SIGNED,
-                    originalFormat.getSampleRate(),
-                    16,
-                    originalFormat.getChannels(),
-                    originalFormat.getChannels() * 2,
-                    originalFormat.getSampleRate(),
-                    true // big endian
+                        AudioFormat.Encoding.PCM_SIGNED,
+                        originalFormat.getSampleRate(),
+                        16,
+                        originalFormat.getChannels(),
+                        originalFormat.getChannels() * 2,
+                        originalFormat.getSampleRate(),
+                        true // big endian
                 );
-                
+
                 if (!AudioSystem.isConversionSupported(pcmFormat, originalFormat)) {
                     throw new AudioPlayerException("Audio format conversion not supported: " + originalFormat);
                 }
             }
-            
+
             return AudioSystem.getAudioInputStream(pcmFormat, audioInputStream);
-            
+
         } catch (Exception e) {
             throw new AudioPlayerException("Failed to convert audio format to PCM", e);
         }
     }
-    
+
     /**
      * Creates a temporary file from audio data for playback.
      *
-     * @param audioData The audio data to write to a temporary file
+     * @param audioData  The audio data to write to a temporary file
      * @param formatHint Audio format hint for file extension
      * @return A temporary file containing the audio data
      * @throws IOException If file creation fails
      */
     private File createTempAudioFile(byte[] audioData, String formatHint) throws IOException {
         // Use format hint if provided, otherwise detect from data
-        String extension = (formatHint != null && !formatHint.trim().isEmpty()) 
-            ? formatHint.trim().toLowerCase() 
-            : detectAudioFormat(audioData);
-        
+        String extension = (formatHint != null && !formatHint.trim().isEmpty())
+                ? formatHint.trim().toLowerCase()
+                : detectAudioFormat(audioData);
+
         File tempFile = File.createTempFile("hellotts_audio_", "." + extension);
         tempFile.deleteOnExit();
-        
+
         try (FileOutputStream fos = new FileOutputStream(tempFile)) {
             fos.write(audioData);
             fos.flush();
         }
-        
+
         return tempFile;
     }
-    
+
     /**
      * Attempts to detect audio format from byte data header.
      *
@@ -393,32 +452,32 @@ public class AudioPlayer {
         if (audioData.length < 4) {
             return "wav"; // Default fallback
         }
-        
+
         // Check for common audio format signatures
         if (audioData[0] == 'R' && audioData[1] == 'I' && audioData[2] == 'F' && audioData[3] == 'F') {
             return "wav";
-        } else if (audioData.length >= 3 && 
-                   (audioData[0] & 0xFF) == 0xFF && 
-                   (audioData[1] & 0xE0) == 0xE0) {
+        } else if (audioData.length >= 3 &&
+                (audioData[0] & 0xFF) == 0xFF &&
+                (audioData[1] & 0xE0) == 0xE0) {
             return "mp3";
         } else if (audioData.length >= 4 &&
-                   audioData[0] == 'O' && audioData[1] == 'g' && 
-                   audioData[2] == 'g' && audioData[3] == 'S') {
+                audioData[0] == 'O' && audioData[1] == 'g' &&
+                audioData[2] == 'g' && audioData[3] == 'S') {
             return "ogg";
         }
-        
+
         return "wav"; // Default fallback
     }
-    
+
     /**
      * Custom exception class for AudioPlayer-specific errors.
      */
     public static class AudioPlayerException extends Exception {
-        
+
         public AudioPlayerException(String message) {
             super(message);
         }
-        
+
         public AudioPlayerException(String message, Throwable cause) {
             super(message, cause);
         }

@@ -73,12 +73,64 @@ class AudioPlayer {
   }
 
   Future<void> _playOnWindows(String filePath) async {
-    final result = await Process.run('powershell', [
-      '-c',
-      '(New-Object Media.SoundPlayer "$filePath").PlaySync()'
-    ]);
-    if (result.exitCode != 0) {
-      throw Exception('Failed to play audio on Windows: ${result.stderr}');
+    // Convert to absolute path
+    final absolutePath = path.isAbsolute(filePath) ? filePath : path.absolute(filePath);
+    
+    // Use the most reliable Windows audio playback method
+    try {
+      // Method 1: Use Windows Media Player via PowerShell (most reliable for MP3)
+      final result = await Process.run('powershell', [
+        '-Command',
+        '''
+        Add-Type -AssemblyName PresentationCore;
+        \$player = New-Object System.Windows.Media.MediaPlayer;
+        \$player.Open([System.Uri]"$absolutePath");
+        \$player.Play();
+        Start-Sleep -Seconds 5;
+        \$player.Close();
+        '''
+      ]);
+      
+      if (result.exitCode == 0) {
+        return; // Success
+      }
+    } catch (e) {
+      // Continue to next method
     }
+    
+    // Method 2: Use system default program
+    try {
+      final result = await Process.run('cmd', [
+        '/c',
+        'start',
+        '/wait',
+        '""',
+        '"$absolutePath"'
+      ]);
+      
+      if (result.exitCode == 0) {
+        // Give some time for the audio to play
+        await Future.delayed(Duration(seconds: 3));
+        return;
+      }
+    } catch (e) {
+      // Continue to next method
+    }
+    
+    // Method 3: PowerShell direct invocation
+    try {
+      final result = await Process.run('powershell', [
+        '-Command',
+        'Invoke-Item "$absolutePath"; Start-Sleep -Seconds 3'
+      ]);
+      
+      if (result.exitCode == 0) {
+        return;
+      }
+    } catch (e) {
+      // Final fallback failed
+    }
+    
+    throw Exception('Failed to play audio on Windows: All playback methods failed');
   }
 }

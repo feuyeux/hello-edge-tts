@@ -190,7 +190,6 @@ impl TTSClient {
     async fn synthesize_via_edge_tts(&self, text: &str, voice: &str) -> Result<Vec<u8>, TTSError> {
         use std::process::Stdio;
         use tokio::process::Command;
-        use std::path::PathBuf;
         
         // Create temporary file for output (use MP3 format)
         let temp_dir = std::env::temp_dir();
@@ -318,13 +317,6 @@ impl TTSClient {
     /// Clear the cached voice list to force refresh on next request
     pub fn clear_voice_cache(&mut self) {
         self.voices_cache = None;
-    }
-
-    /// Create SSML for Edge TTS synthesis
-    fn create_ssml(&self, text: &str, voice: &str) -> String {
-        crate::ssml_utils::SSMLBuilder::new(voice)
-            .add_text(text)
-            .build()
     }
     
     /// Create SSML with prosody controls

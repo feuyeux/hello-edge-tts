@@ -1,0 +1,44 @@
+{
+    "chinese": {
+        "name": "Chinese (Mandarin)",
+        "test_text": "你好，世界！欢迎使用语音合成技术。",
+        "male_voice": "zh-CN-YunxiNeural",
+        "female_voice": "zh-CN-XiaoxiaoNeural",
+        "language_code": "zh-CN"
+    },
+    "french": {
+        "name": "French",
+        "test_text": "Bonjour le monde ! Bienvenue dans la synthese vocale.",
+        "male_voice": "fr-FR-HenriNeural",
+        "female_voice": "fr-FR-DeniseNeural",
+        "language_code": "fr-FR"
+    },
+    "russian": {
+        "name": "Russian",
+        "test_text": "Привет, мир! Добро пожаловать в синтез речи.",
+        "male_voice": "ru-RU-DmitryNeural",
+        "female_voice": "ru-RU-SvetlanaNeural",
+        "language_code": "ru-RU"
+    },
+    "german": {
+        "name": "German",
+        "test_text": "Hallo Welt! Willkommen bei der Sprachsynthese.",
+        "male_voice": "de-DE-ConradNeural",
+        "female_voice": "de-DE-KatjaNeural",
+        "language_code": "de-DE"
+    },
+    "japanese": {
+        "name": "Japanese",
+        "test_text": "こんにちは世界！音声合成技術へようこそ。",
+        "male_voice": "ja-JP-KeitaNeural",
+        "female_voice": "ja-JP-NanamiNeural",
+        "language_code": "ja-JP"
+    },
+    "korean": {
+        "name": "Korean",
+        "test_text": "안녕하세요 세계! 음성 합성 기술에 오신 것을 환영합니다.",
+        "male_voice": "ko-KR-InJoonNeural",
+        "female_voice": "ko-KR-SunHiNeural",
+        "language_code": "ko-KR"
+    }
+}

@@ -8,6 +8,7 @@ ehthumbs.db
 Thumbs.db
 
 # IDE files
+.kiro/
 .vscode/
 .idea/
 *.swp
@@ -134,3 +135,4 @@ site/
 .yarn/
 
 hello-edge-tts-dart/bin/hello_tts
+hello-edge-tts-dart/bin/hello_tts.exe

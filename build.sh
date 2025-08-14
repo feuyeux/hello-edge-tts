@@ -54,22 +54,26 @@ build_python() {
         python3 -m venv .venv
     fi
     
-    # Activate virtual environment
-    echo "~~~~ source .venv/bin/activate ~~~~"
-    source .venv/bin/activate
+    # Setup venv executables without sourcing
+    print_status "Configuring Python virtual environment executables..."
+    if [ -f ".venv/Scripts/python.exe" ]; then
+        VENV_PYTHON=".venv/Scripts/python.exe"
+        VENV_PIP=".venv/Scripts/pip.exe"
+    else
+        VENV_PYTHON=".venv/bin/python"
+        VENV_PIP=".venv/bin/pip"
+    fi
 
     # Upgrade pip
-    pip install --upgrade pip
-    
+    "$VENV_PIP" install --upgrade pip
+
     # Install dependencies
     print_status "Installing Python dependencies..."
-    pip install -r requirements.txt
-    
+    "$VENV_PIP" install -r requirements.txt
+
     # Run basic syntax check
     print_status "Running Python syntax check..."
-    python -m py_compile *.py
-    
-    deactivate
+    "$VENV_PYTHON" -m py_compile *.py
     cd ..
     
     print_success "Python build completed successfully!"

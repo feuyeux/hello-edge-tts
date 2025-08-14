@@ -53,7 +53,7 @@ class TTSClient:
             if use_ssml:
                 self._validate_ssml(text)
             
-            # Create TTS communicate object
+            # Create TTS communicate object with WAV format
             communicate = edge_tts.Communicate(text, voice)
             
             # Collect audio data

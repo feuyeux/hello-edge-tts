@@ -132,3 +132,5 @@ site/
 .cache/
 .npm/
 .yarn/
+
+hello-edge-tts-dart/bin/hello_tts

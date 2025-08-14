@@ -143,7 +143,7 @@ public class HelloTTS {
             
             // Group voices by language
             voices.stream()
-                    .collect(Collectors.groupingBy(Voice::getLanguage))
+                    .collect(Collectors.groupingBy(Voice::getLanguageCode))
                     .forEach((language, voiceList) -> {
                         System.out.println("Language: " + language.toUpperCase());
                         System.out.println("─".repeat(40));
@@ -327,8 +327,10 @@ public class HelloTTS {
      * Generates an output filename based on the voice name
      */
     private static String generateOutputFilename(String voice) {
-        String baseName = voice.toLowerCase().replace("-", "_").replace("neural", "");
-        return "hello_" + baseName + ".mp3";
+        // Extract language from voice (e.g., 'en' from 'en-US-AriaNeural')
+        String lang = voice.split("-")[0];
+        long timestamp = System.currentTimeMillis() / 1000;
+        return "edge_tts_" + lang + "_" + timestamp + ".mp3";
     }
     
     /**

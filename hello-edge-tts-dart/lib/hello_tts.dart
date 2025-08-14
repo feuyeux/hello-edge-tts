@@ -29,12 +29,15 @@ class Voice {
   });
 
   factory Voice.fromJson(Map<String, dynamic> json) {
+    final locale = json['Locale'] ?? '';
+    final language = locale.split('-')[0]; // Extract language code from locale
+    
     return Voice(
       name: json['Name'] ?? '',
       displayName: json['DisplayName'] ?? '',
-      language: json['Locale'] ?? '',
+      language: language,
       gender: json['Gender'] ?? '',
-      locale: json['Locale'] ?? '',
+      locale: locale,
       isNeural: (json['VoiceType'] ?? '').contains('Neural'),
       isStandard: (json['VoiceType'] ?? '').contains('Standard'),
     );

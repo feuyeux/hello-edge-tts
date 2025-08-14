@@ -182,20 +182,74 @@ impl TTSClient {
             self.validate_ssml(text)?;
         }
         
-        // Create SSML for the request
-        let ssml = if use_ssml {
-            text.to_string()
-        } else {
-            self.create_ssml(text, voice)
+        // Use edge-tts via command line (similar to Dart implementation)
+        self.synthesize_via_edge_tts(text, voice).await
+    }
+
+    /// Use Python edge-tts library via process execution
+    async fn synthesize_via_edge_tts(&self, text: &str, voice: &str) -> Result<Vec<u8>, TTSError> {
+        use std::process::Stdio;
+        use tokio::process::Command;
+        use std::path::PathBuf;
+        
+        // Create temporary file for output (use MP3 format)
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join(format!("tts_output_{}.mp3", 
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()));
+        
+        // Try edge-tts command
+        let mut cmd = Command::new("edge-tts");
+        cmd.args(&[
+            "--voice", voice,
+            "--text", text,
+            "--write-media", temp_file.to_str().unwrap(),
+        ])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+        
+        let output = cmd.output().await;
+        
+        let success = match output {
+            Ok(output) => output.status.success(),
+            Err(_) => false,
         };
         
-        // Since Edge TTS requires WebSocket communication which is complex to implement,
-        // we'll return a placeholder implementation that demonstrates the API structure
-        // In a real implementation, you would use the edge-tts protocol
+        // If direct edge-tts command fails, try python -m edge_tts
+        if !success {
+            let mut python_cmd = Command::new("python");
+            python_cmd.args(&[
+                "-m", "edge_tts",
+                "--voice", voice,
+                "--text", text,
+                "--write-media", temp_file.to_str().unwrap(),
+            ])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+            
+            let python_output = python_cmd.output().await
+                .map_err(|e| TTSError::Synthesis(format!("Failed to execute edge-tts: {}", e)))?;
+            
+            if !python_output.status.success() {
+                let stderr = String::from_utf8_lossy(&python_output.stderr);
+                return Err(TTSError::Synthesis(format!("Edge TTS failed: {}", stderr)));
+            }
+        }
         
-        Err(TTSError::Synthesis(
-            format!("WebSocket implementation required for Edge TTS. SSML prepared: {}", ssml.len())
-        ))
+        // Read the generated audio file
+        if temp_file.exists() {
+            let audio_data = fs::read(&temp_file).await
+                .map_err(|e| TTSError::Synthesis(format!("Failed to read audio file: {}", e)))?;
+            
+            // Clean up temporary file
+            let _ = fs::remove_file(&temp_file).await;
+            
+            Ok(audio_data)
+        } else {
+            Err(TTSError::Synthesis("Audio file was not generated".to_string()))
+        }
     }
     
     /// Convert SSML to audio data using specified voice

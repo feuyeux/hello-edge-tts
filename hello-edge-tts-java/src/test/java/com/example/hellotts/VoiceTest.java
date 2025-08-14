@@ -63,24 +63,24 @@ public class VoiceTest {
     }
 
     @Test
-    void testGetLanguage() {
-        assertEquals("en", ariaVoice.getLanguage());
-        assertEquals("es", elviraVoice.getLanguage());
+    void testGetLanguageCode() {
+        assertEquals("en", ariaVoice.getLanguageCode());
+        assertEquals("es", elviraVoice.getLanguageCode());
         
         // Test voice with no country code
         Voice simpleVoice = new Voice("test", "Test", "fr", "Female");
-        assertEquals("fr", simpleVoice.getLanguage());
+        assertEquals("fr", simpleVoice.getLanguageCode());
     }
 
     @Test
-    void testGetCountry() {
-        assertEquals("US", ariaVoice.getCountry());
-        assertEquals("GB", soniaVoice.getCountry());
-        assertEquals("ES", elviraVoice.getCountry());
+    void testGetCountryCode() {
+        assertEquals("US", ariaVoice.getCountryCode());
+        assertEquals("GB", soniaVoice.getCountryCode());
+        assertEquals("ES", elviraVoice.getCountryCode());
         
         // Test voice with no country code
         Voice simpleVoice = new Voice("test", "Test", "fr", "Female");
-        assertEquals("", simpleVoice.getCountry());
+        assertEquals("", simpleVoice.getCountryCode());
     }
 
     @Test

@@ -89,7 +89,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 for (i, text) in demo_texts.iter().enumerate() {
                     println!("\n   📝 Synthesizing text {}: \"{}\"", i + 1, text);
                     
-                    match client.synthesize_text(text, &voice.name).await {
+                    match client.synthesize_text(text, &voice.name, None).await {
                         Ok(audio_data) => {
                             println!("   ✅ Synthesis successful! Generated {} bytes of audio data", audio_data.len());
                             
@@ -150,6 +150,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         cache_voices: true,
         max_retries: 5,
         timeout: std::time::Duration::from_secs(45),
+        rate: "0%".to_string(),
+        pitch: "0%".to_string(),
+        volume: "100%".to_string(),
+        ssml: false,
+        batch_size: 5,
+        max_concurrent: 3,
     };
     
     let _custom_client = TTSClient::new(Some(custom_config));

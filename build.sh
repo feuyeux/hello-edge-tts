@@ -55,8 +55,9 @@ build_python() {
     fi
     
     # Activate virtual environment
+    echo "~~~~ source .venv/bin/activate ~~~~"
     source .venv/bin/activate
-    
+
     # Upgrade pip
     pip install --upgrade pip
     

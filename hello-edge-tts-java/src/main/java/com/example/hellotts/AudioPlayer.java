@@ -35,7 +35,7 @@ public class AudioPlayer {
     
     /**
      * Plays an audio file from the specified file path.
-     * Supports common audio formats including WAV, MP3, and others supported by the system.
+     * Supports WAV, AIFF, AU formats through Java's built-in audio system, and MP3 through system commands.
      *
      * @param filename The path to the audio file to play
      * @throws AudioPlayerException If the file cannot be played due to format issues or I/O errors
@@ -57,10 +57,78 @@ public class AudioPlayer {
         }
         
         try {
-            File audioFile = filePath.toFile();
-            playAudioFile(audioFile);
+            // Check if file is MP3 format (edge-tts generates MP3 regardless of extension)
+            if (isMP3File(filePath.toFile())) {
+                playMP3WithSystemCommand(filename);
+            } else {
+                File audioFile = filePath.toFile();
+                playAudioFile(audioFile);
+            }
         } catch (Exception e) {
             throw new AudioPlayerException("Failed to play audio file: " + filename, e);
+        }
+    }
+
+    /**
+     * Check if file is MP3 format by reading file header
+     */
+    private boolean isMP3File(File file) {
+        try {
+            byte[] header = new byte[3];
+            try (java.io.FileInputStream fis = new java.io.FileInputStream(file)) {
+                fis.read(header);
+            }
+            // Check for MP3 header (ID3 tag or MPEG frame sync)
+            return (header[0] == 'I' && header[1] == 'D' && header[2] == '3') ||
+                   (header[0] == (byte)0xFF && (header[1] & 0xE0) == 0xE0);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Play MP3 file using system command
+     */
+    private void playMP3WithSystemCommand(String filename) throws Exception {
+        String os = System.getProperty("os.name").toLowerCase();
+        ProcessBuilder pb;
+        
+        if (os.contains("mac")) {
+            // macOS
+            pb = new ProcessBuilder("afplay", filename);
+        } else if (os.contains("win")) {
+            // Windows
+            pb = new ProcessBuilder("powershell", "-c", 
+                "(New-Object Media.SoundPlayer '" + filename + "').PlaySync()");
+        } else {
+            // Linux - try multiple players
+            String[] players = {"mpg123", "mpv", "vlc", "paplay"};
+            boolean played = false;
+            
+            for (String player : players) {
+                try {
+                    pb = new ProcessBuilder(player, filename);
+                    Process process = pb.start();
+                    int exitCode = process.waitFor();
+                    if (exitCode == 0) {
+                        played = true;
+                        break;
+                    }
+                } catch (Exception e) {
+                    // Try next player
+                }
+            }
+            
+            if (!played) {
+                throw new Exception("No suitable audio player found on Linux");
+            }
+            return;
+        }
+        
+        Process process = pb.start();
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new Exception("Audio playback failed with exit code: " + exitCode);
         }
     }
     

@@ -1,12 +1,17 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:io';
+import 'dart:math';
 import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:uuid/uuid.dart';
 import 'hello_tts.dart';
 
 /// TTS Client for Microsoft Edge TTS service
 class TTSClient {
   static const String _baseUrl = 'https://speech.platform.bing.com';
   static const String _voicesUrl = '$_baseUrl/consumer/speech/synthesize/readaloud/voices/list?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4';
+  static const String _synthesizeUrl = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
   
   final http.Client _httpClient;
   List<Voice>? _cachedVoices;
@@ -49,21 +54,94 @@ class TTSClient {
   /// Synthesize SSML to speech
   Future<Uint8List> synthesizeSSML(String ssml, String voiceName, {String format = 'mp3'}) async {
     try {
-      // This is a simplified implementation
-      // In a real implementation, you would use WebSocket connection to Edge TTS service
-      // For now, we'll return a placeholder
-      throw TTSError('TTS synthesis not implemented in this demo version');
+      return await _synthesizeViaEdgeTTS(ssml, voiceName, format);
     } catch (e) {
       throw TTSError('Error during synthesis: $e');
     }
   }
 
+  /// Use Python edge-tts library via process execution
+  Future<Uint8List> _synthesizeViaEdgeTTS(String ssml, String voiceName, String format) async {
+    try {
+      // Extract text from SSML for edge-tts command line
+      final text = _extractTextFromSSML(ssml);
+      
+      // Create temporary file for output (use MP3 format)
+      final tempDir = Directory.systemTemp;
+      final tempFile = File('${tempDir.path}/tts_output_${DateTime.now().millisecondsSinceEpoch}.mp3');
+      
+      try {
+        // Use edge-tts command line tool
+        final result = await Process.run('edge-tts', [
+          '--voice', voiceName,
+          '--text', text,
+          '--write-media', tempFile.path,
+        ]);
+        
+        if (result.exitCode != 0) {
+          // Try with python -m edge_tts if direct command fails
+          final pythonResult = await Process.run('python', [
+            '-m', 'edge_tts',
+            '--voice', voiceName,
+            '--text', text,
+            '--write-media', tempFile.path,
+          ]);
+          
+          if (pythonResult.exitCode != 0) {
+            throw TTSError('Edge TTS failed: ${pythonResult.stderr}');
+          }
+        }
+        
+        // Read the generated audio file
+        if (await tempFile.exists()) {
+          final audioData = await tempFile.readAsBytes();
+          return Uint8List.fromList(audioData);
+        } else {
+          throw TTSError('Audio file was not generated');
+        }
+        
+      } finally {
+        // Clean up temporary file
+        if (await tempFile.exists()) {
+          await tempFile.delete();
+        }
+      }
+      
+    } catch (e) {
+      throw TTSError('Failed to synthesize via Edge TTS: $e');
+    }
+  }
+
+  /// Extract plain text from SSML
+  String _extractTextFromSSML(String ssml) {
+    // Simple SSML text extraction - remove XML tags
+    return ssml
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&apos;', "'")
+        .trim();
+  }
+
+
+
   /// Build SSML from plain text
   String _buildSSML(String text, String voiceName) {
+    // Extract language from voice name
+    final parts = voiceName.split('-');
+    final lang = parts.length >= 2 ? '${parts[0]}-${parts[1]}' : 'en-US';
+    
     return '''<?xml version="1.0" encoding="UTF-8"?>
-<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
+<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="$lang">
   <voice name="$voiceName">$text</voice>
 </speak>''';
+  }
+
+  /// Clear voice cache
+  void clearVoiceCache() {
+    _cachedVoices = null;
   }
 
   /// Dispose resources

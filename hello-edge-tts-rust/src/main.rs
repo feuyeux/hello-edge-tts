@@ -93,7 +93,15 @@ async fn handle_speak(text: String, voice: String, output: Option<PathBuf>, play
     // Attempt synthesis (will show demo message since WebSocket implementation is complex)
     match client.synthesize_text(&text, &voice, None).await {
         Ok(audio_data) => {
-            let output_path = output.unwrap_or_else(|| PathBuf::from("hello.mp3"));
+            let output_path = output.unwrap_or_else(|| {
+                // Extract language from voice (e.g., 'en' from 'en-US-AriaNeural')
+                let lang = voice.split('-').next().unwrap_or("unknown");
+                let timestamp = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs();
+                PathBuf::from(format!("edge_tts_{}_{}.mp3", lang, timestamp))
+            });
             
             match client.save_audio(&audio_data, output_path.to_str().unwrap()).await {
                 Ok(()) => {

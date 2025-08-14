@@ -119,11 +119,11 @@ sequenceDiagram
 - **Performance**: Highest performance, lowest memory footprint, no GC overhead
 
 #### ☕ Java Implementation
-- **Runtime**: Java 11+ (17+ recommended for optimal performance)
-- **Async Model**: CompletableFuture with virtual threads (Java 19+)
+- **Runtime**: Java 21+ (LTS with modern features and performance improvements)
+- **Async Model**: CompletableFuture with virtual threads and structured concurrency
 - **Audio Backends**: javax.sound.sampled (built-in)
-- **Unique Features**: Enterprise-grade features, extensive tooling, JVM optimization
-- **Performance**: Excellent JIT optimization, mature profiling tools, good scalability
+- **Unique Features**: Enterprise-grade features, extensive tooling, JVM optimization, modern Java features
+- **Performance**: Excellent JIT optimization, mature profiling tools, good scalability, enhanced GC
 
 ## 🚀 Quick Start
 
@@ -131,6 +131,12 @@ sequenceDiagram
 - Internet connection for TTS service access
 - Audio playback capabilities (speakers/headphones)
 - Language-specific runtime (see individual sections)
+
+### 🆕 Recent Updates (August 2025)
+- **Java Implementation**: Upgraded to Java 21 LTS with enhanced performance and modern features
+- **Build System**: Eliminated all Maven warnings and improved JAR packaging
+- **Dependencies**: Updated to latest stable versions for security and performance
+- **Documentation**: Comprehensive guides updated with latest requirements
 
 ### Choose Your Language
 
@@ -145,27 +151,21 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 # Run basic example
 python hello_tts.py
-
-# Try advanced features
-python hello_tts.py --text "Hello from Python!" --voice "en-US-JennyNeural"
+python hello_tts.py --text 'Hello from Python!' --voice 'en-US-JennyNeural'
 python advanced_tts.py --demo ssml
 ```
 
 #### 🎯 Dart (Great for Cross-Platform)
 ```bash
 # Navigate to Dart directory
-cd dart
+cd hello-edge-tts-dart 
 
 # Get dependencies
 dart pub get
 
 # Run basic example
 dart run bin/main.dart
-
-# Try with custom text
-dart run bin/main.dart --text "Hello from Dart!" --voice "en-US-DavisNeural"
-
-# Compile to executable
+dart run bin/main.dart --text 'Hello from Dart!' --voice 'en-US-JennyNeural'
 dart compile exe bin/main.dart -o hello_tts
 ./hello_tts --list-voices
 ```
@@ -182,47 +182,41 @@ cargo build
 cargo run
 
 # Try with arguments
-cargo run -- --text "Hello from Rust!" --voice "en-US-AriaNeural"
+cargo run -- --text 'Hello from Rust!' --voice 'en-US-AriaNeural'
 
 # Build optimized release
 cargo build --release
 ./target/release/hello-edge-tts --help
 ```
 
-#### ☕ Java (Enterprise Ready)
+#### ☕ Java (Enterprise Ready - Java 21 LTS)
 ```bash
 # Navigate to Java directory
-cd java
-
-# Compile project
+cd hello-edge-tts-java
 mvn compile
 
 # Run basic example
-mvn exec:java -Dexec.mainClass="com.example.hellotts.HelloTTS"
-
-# Try with arguments
-mvn exec:java -Dexec.mainClass="com.example.hellotts.HelloTTS" \
-  -Dexec.args="--text 'Hello from Java!' --voice en-US-GuyNeural"
-
-# Package as JAR
+mvn exec:java -Dexec.mainClass='com.example.hellotts.HelloTTS'
+mvn exec:java -Dexec.mainClass='com.example.hellotts.HelloTTS' \
+  -Dexec.args='--text '\''Hello from Java 21!'\'' --voice en-US-GuyNeural'
 mvn package
-java -jar target/hello-edge-tts-1.0-SNAPSHOT.jar --help
+java -jar target/hello-edge-tts-standalone.jar --help
 ```
 
 ### 🎯 One-Liner Examples
 
 ```bash
 # Python: Quick synthesis
-python python/hello_tts.py --text "Welcome to TTS!" --output welcome.mp3
+python python/hello_tts.py --text 'Welcome to TTS!' --output welcome.mp3
 
 # Dart: List available voices
 dart run dart/bin/main.dart --list-voices | head -20
 
 # Rust: Batch processing
-echo "Hello\nWorld\nFrom Rust" | cargo run --manifest-path rust/Cargo.toml -- --batch
+echo 'Hello\nWorld\nFrom Rust' | cargo run --manifest-path rust/Cargo.toml -- --batch
 
 # Java: SSML example
-mvn exec:java -f java/pom.xml -Dexec.args="--ssml '<speak>Hello <break time=\"1s\"/> World!</speak>'"
+mvn exec:java -f java/pom.xml -Dexec.args='--ssml "<speak>Hello <break time=\"1s\"/> World!</speak>"'
 ```
 
 For detailed setup instructions and advanced usage, see the language-specific README files:

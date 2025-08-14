@@ -1,0 +1,82 @@
+{
+  "popular_voices": {
+    "english_us": [
+      {
+        "name": "en-US-AriaNeural",
+        "displayName": "Aria",
+        "locale": "en-US",
+        "gender": "Female",
+        "description": "Friendly and conversational"
+      },
+      {
+        "name": "en-US-DavisNeural",
+        "displayName": "Davis",
+        "locale": "en-US",
+        "gender": "Male",
+        "description": "Professional and clear"
+      },
+      {
+        "name": "en-US-JennyNeural",
+        "displayName": "Jenny",
+        "locale": "en-US",
+        "gender": "Female",
+        "description": "Natural and expressive"
+      },
+      {
+        "name": "en-US-GuyNeural",
+        "displayName": "Guy",
+        "locale": "en-US",
+        "gender": "Male",
+        "description": "Warm and engaging"
+      }
+    ],
+    "spanish": [
+      {
+        "name": "es-ES-ElviraNeural",
+        "displayName": "Elvira",
+        "locale": "es-ES",
+        "gender": "Female",
+        "description": "Spanish from Spain"
+      },
+      {
+        "name": "es-ES-AlvaroNeural",
+        "displayName": "Alvaro",
+        "locale": "es-ES",
+        "gender": "Male",
+        "description": "Spanish from Spain"
+      }
+    ],
+    "french": [
+      {
+        "name": "fr-FR-DeniseNeural",
+        "displayName": "Denise",
+        "locale": "fr-FR",
+        "gender": "Female",
+        "description": "French from France"
+      },
+      {
+        "name": "fr-FR-HenriNeural",
+        "displayName": "Henri",
+        "locale": "fr-FR",
+        "gender": "Male",
+        "description": "French from France"
+      }
+    ],
+    "german": [
+      {
+        "name": "de-DE-KatjaNeural",
+        "displayName": "Katja",
+        "locale": "de-DE",
+        "gender": "Female",
+        "description": "German from Germany"
+      },
+      {
+        "name": "de-DE-ConradNeural",
+        "displayName": "Conrad",
+        "locale": "de-DE",
+        "gender": "Male",
+        "description": "German from Germany"
+      }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 # Java TTS Implementation
 
-This directory contains the Java implementation of the hello-edge-tts project using Java 11+ HTTP client and CompletableFuture for async operations. This implementation showcases modern Java features, reactive programming patterns, and enterprise-grade error handling.
+This directory contains the Java implementation of the hello-edge-tts project using Java 21 LTS with modern HTTP client and CompletableFuture for async operations. This implementation showcases the latest Java features, reactive programming patterns, virtual threads, and enterprise-grade error handling.
 
 ## 🏗️ Java Implementation Architecture
 
@@ -54,11 +54,11 @@ sequenceDiagram
 
 ## 📋 Prerequisites
 
-- **Java**: 11+ (Java 17+ recommended for optimal performance)
-- **Build Tool**: Maven 3.6+ (Maven 3.8+ recommended)
+- **Java**: 21+ LTS (Latest Long Term Support with modern features and performance improvements)
+- **Build Tool**: Maven 3.9+ (Latest version recommended for Java 21 support)
 - **Internet Connection**: Required for TTS service access
 - **Audio System**: Speakers/headphones for audio playback
-- **Optional**: IDE with Java support (IntelliJ IDEA, Eclipse, VS Code)
+- **Optional**: IDE with Java 21 support (IntelliJ IDEA 2023.2+, Eclipse 2023-09+, VS Code with Extension Pack for Java)
 
 ## 🚀 Quick Start
 
@@ -155,10 +155,10 @@ hello-edge-tts-java/
 
 | Dependency | Version | Purpose |
 |------------|---------|---------|
-| Java HTTP Client | Built-in (11+) | HTTP client with async support |
-| Jackson | 2.15.0 | JSON processing |
-| JUnit 5 | 5.9.0 | Testing framework |
-| Maven Surefire | 3.0.0 | Test execution |
+| Java HTTP Client | Built-in (21+) | HTTP client with async support and virtual threads |
+| Jackson | 2.16.1 | JSON processing with latest features |
+| JUnit 5 | 5.10.1 | Modern testing framework |
+| Maven Surefire | 3.2.5 | Test execution with Java 21 support |
 | javax.sound.sampled | Built-in | Audio playback |
 
 ## 🔧 API Reference

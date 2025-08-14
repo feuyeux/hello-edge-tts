@@ -1,5 +1,6 @@
 package com.example.hellotts;
 
+import java.io.File;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
 import java.util.List;
@@ -34,18 +35,75 @@ public class TTSClient {
      */
     public CompletableFuture<byte[]> synthesizeTextWithOptions(String text, String voice, boolean useSSML) {
         return CompletableFuture.supplyAsync(() -> {
-            // Validate SSML if specified
-            if (useSSML) {
-                validateSSML(text);
+            try {
+                // Validate SSML if specified
+                if (useSSML) {
+                    validateSSML(text);
+                }
+                
+                // Create SSML for the request
+                String ssml = useSSML ? text : createSSML(text, voice);
+                System.out.println("SSML prepared for synthesis: " + ssml.length() + " characters");
+                
+                // Use edge-tts via process execution (similar to Dart and Rust implementations)
+                return synthesizeViaEdgeTTS(text, voice);
+                
+            } catch (Exception e) {
+                throw new RuntimeException("TTS synthesis failed: " + e.getMessage(), e);
+            }
+        });
+    }
+
+    /**
+     * Use Python edge-tts library via process execution
+     */
+    private byte[] synthesizeViaEdgeTTS(String text, String voice) throws Exception {
+        // Create temporary file for output (use MP3 format)
+        File tempFile = File.createTempFile("tts_output_", ".mp3");
+        tempFile.deleteOnExit();
+        
+        try {
+            // Try edge-tts command first
+            ProcessBuilder pb = new ProcessBuilder(
+                "edge-tts",
+                "--voice", voice,
+                "--text", text,
+                "--write-media", tempFile.getAbsolutePath()
+            );
+            
+            Process process = pb.start();
+            int exitCode = process.waitFor();
+            
+            // If direct edge-tts command fails, try python -m edge_tts
+            if (exitCode != 0) {
+                ProcessBuilder pythonPb = new ProcessBuilder(
+                    "python", "-m", "edge_tts",
+                    "--voice", voice,
+                    "--text", text,
+                    "--write-media", tempFile.getAbsolutePath()
+                );
+                
+                Process pythonProcess = pythonPb.start();
+                int pythonExitCode = pythonProcess.waitFor();
+                
+                if (pythonExitCode != 0) {
+                    throw new RuntimeException("Edge TTS failed with exit code: " + pythonExitCode);
+                }
             }
             
-            // Create SSML for the request
-            String ssml = useSSML ? text : createSSML(text, voice);
+            // Read the generated audio file
+            if (tempFile.exists() && tempFile.length() > 0) {
+                return java.nio.file.Files.readAllBytes(tempFile.toPath());
+            } else {
+                throw new RuntimeException("Audio file was not generated or is empty");
+            }
             
-            // Placeholder implementation - would implement actual TTS here
-            System.out.println("SSML prepared for synthesis: " + ssml.length() + " characters");
-            return new byte[0];
-        });
+        } finally {
+            // Clean up temporary file
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
     }
     
     /**
@@ -59,8 +117,22 @@ public class TTSClient {
      * Save audio data to file
      */
     public CompletableFuture<Void> saveAudio(byte[] audioData, String filename) {
-        // Placeholder implementation
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                // Ensure output directory exists
+                File file = new File(filename);
+                File parentDir = file.getParentFile();
+                if (parentDir != null && !parentDir.exists()) {
+                    parentDir.mkdirs();
+                }
+                
+                // Write audio data to file
+                java.nio.file.Files.write(file.toPath(), audioData);
+                return null;
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to save audio file: " + e.getMessage(), e);
+            }
+        });
     }
     
     /**

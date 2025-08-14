@@ -1,7 +1,6 @@
 #!/usr/bin/env dart
 
 import 'dart:io';
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:args/args.dart';
 import 'package:path/path.dart' as path;
@@ -204,7 +203,8 @@ Future<void> main(List<String> arguments) async {
     ..addOption('config', abbr: 'c', help: 'Configuration file path')
     ..addOption('output-dir', help: 'Output directory for batch operations', defaultsTo: 'output')
     ..addFlag('list-voices', help: 'List available voices', negatable: false)
-    ..addFlag('play', help: 'Play audio after synthesis', negatable: false)
+    ..addFlag('play', help: 'Play audio after synthesis (default: true)', defaultsTo: true)
+    ..addFlag('no-play', help: 'Don\'t play audio after synthesis', negatable: false)
     ..addFlag('ssml-examples', help: 'Run SSML examples', negatable: false)
     ..addFlag('multilingual-examples', help: 'Run multilingual examples', negatable: false)
     ..addFlag('help', abbr: 'h', help: 'Show help', negatable: false)
@@ -269,7 +269,7 @@ Future<void> main(List<String> arguments) async {
     final ssml = results['ssml'] as String?;
     final voice = results['voice'] as String;
     final format = results['format'] as String;
-    final play = results['play'] as bool;
+    final play = results['play'] as bool && !(results['no-play'] as bool);
 
     if (text == null && ssml == null) {
       print('Error: Either --text or --ssml must be provided');
@@ -296,8 +296,10 @@ Future<void> main(List<String> arguments) async {
       if (results['output'] != null) {
         outputPath = results['output'] as String;
       } else {
-        final safeText = getSafeFilename(text ?? ssml ?? 'output');
-        final filename = '${safeText}_${voice.replaceAll('-', '_')}.$format';
+        // Extract language from voice (e.g., 'en' from 'en-US-AriaNeural')
+        final lang = voice.split('-')[0];
+        final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        final filename = 'edge_tts_${lang}_$timestamp.mp3';
         outputPath = path.join(outputDir, filename);
       }
 
@@ -308,14 +310,16 @@ Future<void> main(List<String> arguments) async {
       print('✅ Audio saved to: $outputPath');
       print('📊 File size: ${(audioData.length / 1024).toStringAsFixed(1)} KB');
 
-      // Play audio if requested
+      // Play audio (default behavior, unless --no-play is specified)
       if (play) {
         try {
+          print('🔊 Playing audio...');
           final player = AudioPlayer();
           await player.play(outputPath);
-          print('🔊 Playing audio...');
+          print('✅ Playback completed!');
         } catch (e) {
           print('⚠️  Could not play audio: $e');
+          print('💡 Audio file was saved successfully though.');
         }
       }
 

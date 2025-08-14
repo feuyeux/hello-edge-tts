@@ -9,6 +9,7 @@ Microsoft Edge TTS service.
 import asyncio
 import argparse
 import os
+import time
 from pathlib import Path
 
 from tts_client import TTSClient, TTSError
@@ -100,8 +101,10 @@ async def main():
         if args.output:
             output_file = args.output
         else:
-            safe_name = get_safe_filename(args.text)
-            output_file = os.path.join(output_dir, f"{safe_name}.mp3")
+            # Extract language from voice (e.g., 'en' from 'en-US-AriaNeural')
+            lang = args.voice.split('-')[0]
+            timestamp = int(time.time())
+            output_file = os.path.join(output_dir, f"edge_tts_{lang}_{timestamp}.mp3")
         
         print(f"Text: {args.text}")
         print(f"Voice: {args.voice}")

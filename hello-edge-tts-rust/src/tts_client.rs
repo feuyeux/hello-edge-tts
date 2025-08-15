@@ -92,43 +92,49 @@ impl TTSConfig {
     /// Validate configuration
     pub fn validate(&self) -> Result<(), TTSError> {
         if self.default_voice.is_empty() {
-            return Err(TTSError::Config("default_voice cannot be empty".to_string()));
+            return Err(TTSError::Config(
+                "default_voice cannot be empty".to_string(),
+            ));
         }
         if self.batch_size == 0 {
             return Err(TTSError::Config("batch_size must be positive".to_string()));
         }
         if self.max_concurrent == 0 {
-            return Err(TTSError::Config("max_concurrent must be positive".to_string()));
+            return Err(TTSError::Config(
+                "max_concurrent must be positive".to_string(),
+            ));
         }
         Ok(())
     }
-    
+
     /// Load configuration from JSON file
     pub fn from_json_file(path: &str) -> Result<Self, TTSError> {
         let content = std::fs::read_to_string(path)
             .map_err(|e| TTSError::Config(format!("Failed to read config file {}: {}", path, e)))?;
-        
+
         let config: TTSConfig = serde_json::from_str(&content)
             .map_err(|e| TTSError::Config(format!("Invalid JSON in config file: {}", e)))?;
-        
+
         config.validate()?;
         Ok(config)
     }
-    
+
     /// Save configuration to JSON file
     pub fn to_json_file(&self, path: &str) -> Result<(), TTSError> {
         let content = serde_json::to_string_pretty(self)
             .map_err(|e| TTSError::Config(format!("Failed to serialize config: {}", e)))?;
-        
+
         // Create directory if it doesn't exist
         if let Some(parent) = std::path::Path::new(path).parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| TTSError::Config(format!("Failed to create config directory: {}", e)))?;
+            std::fs::create_dir_all(parent).map_err(|e| {
+                TTSError::Config(format!("Failed to create config directory: {}", e))
+            })?;
         }
-        
-        std::fs::write(path, content)
-            .map_err(|e| TTSError::Config(format!("Failed to write config file {}: {}", path, e)))?;
-        
+
+        std::fs::write(path, content).map_err(|e| {
+            TTSError::Config(format!("Failed to write config file {}: {}", path, e))
+        })?;
+
         Ok(())
     }
 }
@@ -170,18 +176,29 @@ impl TTSClient {
     }
 
     /// Convert text to audio data using specified voice
-    pub async fn synthesize_text(&self, text: &str, voice: &str, use_ssml: Option<bool>) -> Result<Vec<u8>, TTSError> {
+    pub async fn synthesize_text(
+        &self,
+        text: &str,
+        voice: &str,
+        use_ssml: Option<bool>,
+    ) -> Result<Vec<u8>, TTSError> {
         let use_ssml = use_ssml.unwrap_or(false);
-        self.synthesize_text_with_options(text, voice, use_ssml).await
+        self.synthesize_text_with_options(text, voice, use_ssml)
+            .await
     }
-    
+
     /// Convert text to audio data using specified voice with SSML option
-    pub async fn synthesize_text_with_options(&self, text: &str, voice: &str, use_ssml: bool) -> Result<Vec<u8>, TTSError> {
+    pub async fn synthesize_text_with_options(
+        &self,
+        text: &str,
+        voice: &str,
+        use_ssml: bool,
+    ) -> Result<Vec<u8>, TTSError> {
         // Validate SSML if specified
         if use_ssml {
             self.validate_ssml(text)?;
         }
-        
+
         // Use edge-tts via command line (similar to Dart implementation)
         self.synthesize_via_edge_tts(text, voice).await
     }
@@ -190,67 +207,82 @@ impl TTSClient {
     async fn synthesize_via_edge_tts(&self, text: &str, voice: &str) -> Result<Vec<u8>, TTSError> {
         use std::process::Stdio;
         use tokio::process::Command;
-        
+
         // Create temporary file for output (use MP3 format)
         let temp_dir = std::env::temp_dir();
-        let temp_file = temp_dir.join(format!("tts_output_{}.mp3", 
+        let temp_file = temp_dir.join(format!(
+            "tts_output_{}.mp3",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
-                .as_millis()));
-        
+                .as_millis()
+        ));
+
         // Try edge-tts command
         let mut cmd = Command::new("edge-tts");
-        cmd.args(&[
-            "--voice", voice,
-            "--text", text,
-            "--write-media", temp_file.to_str().unwrap(),
+        cmd.args([
+            "--voice",
+            voice,
+            "--text",
+            text,
+            "--write-media",
+            temp_file.to_str().unwrap(),
         ])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
-        
+
         let output = cmd.output().await;
-        
+
         let success = match output {
             Ok(output) => output.status.success(),
             Err(_) => false,
         };
-        
+
         // If direct edge-tts command fails, try python -m edge_tts
         if !success {
             let mut python_cmd = Command::new("python");
-            python_cmd.args(&[
-                "-m", "edge_tts",
-                "--voice", voice,
-                "--text", text,
-                "--write-media", temp_file.to_str().unwrap(),
-            ])
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
-            
-            let python_output = python_cmd.output().await
+            python_cmd
+                .args([
+                    "-m",
+                    "edge_tts",
+                    "--voice",
+                    voice,
+                    "--text",
+                    text,
+                    "--write-media",
+                    temp_file.to_str().unwrap(),
+                ])
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped());
+
+            let python_output = python_cmd
+                .output()
+                .await
                 .map_err(|e| TTSError::Synthesis(format!("Failed to execute edge-tts: {}", e)))?;
-            
+
             if !python_output.status.success() {
                 let stderr = String::from_utf8_lossy(&python_output.stderr);
                 return Err(TTSError::Synthesis(format!("Edge TTS failed: {}", stderr)));
             }
         }
-        
+
         // Read the generated audio file
         if temp_file.exists() {
-            let audio_data = fs::read(&temp_file).await
+            let audio_data = fs::read(&temp_file)
+                .await
                 .map_err(|e| TTSError::Synthesis(format!("Failed to read audio file: {}", e)))?;
-            
+
             // Clean up temporary file
             let _ = fs::remove_file(&temp_file).await;
-            
+
             Ok(audio_data)
         } else {
-            Err(TTSError::Synthesis("Audio file was not generated".to_string()))
+            Err(TTSError::Synthesis(
+                "Audio file was not generated".to_string(),
+            ))
         }
     }
-    
+
     /// Convert SSML to audio data using specified voice
     pub async fn synthesize_ssml(&self, ssml: &str, voice: &str) -> Result<Vec<u8>, TTSError> {
         self.synthesize_text_with_options(ssml, voice, true).await
@@ -262,7 +294,7 @@ impl TTSClient {
         if let Some(parent) = std::path::Path::new(filename).parent() {
             fs::create_dir_all(parent).await?;
         }
-        
+
         fs::write(filename, audio_data).await?;
         Ok(())
     }
@@ -274,10 +306,14 @@ impl TTSClient {
         }
 
         let voices_url = "https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/voices/list?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4";
-        
-        let response = self.client
+
+        let response = self
+            .client
             .get(voices_url)
-            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+            .header(
+                "User-Agent",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            )
             .send()
             .await?;
 
@@ -289,7 +325,7 @@ impl TTSClient {
         }
 
         let voices_data: Vec<EdgeVoiceData> = response.json().await?;
-        
+
         let voices: Vec<Voice> = voices_data
             .into_iter()
             .map(|v| Voice::new(v.short_name, v.friendly_name, v.locale, v.gender))
@@ -305,7 +341,7 @@ impl TTSClient {
     /// Get voices filtered by language code
     pub async fn get_voices_by_language(&mut self, language: &str) -> Result<Vec<Voice>, TTSError> {
         let all_voices = self.list_voices().await?;
-        
+
         let filtered_voices: Vec<Voice> = all_voices
             .into_iter()
             .filter(|voice| voice.matches_language(language))
@@ -318,31 +354,38 @@ impl TTSClient {
     pub fn clear_voice_cache(&mut self) {
         self.voices_cache = None;
     }
-    
+
     /// Create SSML with prosody controls
-    pub fn create_prosody_ssml(&self, text: &str, voice: &str, rate: Option<&str>, pitch: Option<&str>, volume: Option<&str>) -> String {
+    pub fn create_prosody_ssml(
+        &self,
+        text: &str,
+        voice: &str,
+        rate: Option<&str>,
+        pitch: Option<&str>,
+        volume: Option<&str>,
+    ) -> String {
         crate::ssml_utils::SSMLBuilder::new(voice)
             .add_prosody(text, rate, pitch, volume)
             .build()
     }
-    
+
     /// Create SSML with emphasis markup
     pub fn create_emphasis_ssml(&self, text: &str, voice: &str, emphasis_level: &str) -> String {
         crate::ssml_utils::SSMLBuilder::new(voice)
             .add_emphasis(text, emphasis_level)
             .build()
     }
-    
+
     /// Create SSML with breaks between text parts
     pub fn create_break_ssml(&self, text_parts: &[&str], voice: &str, break_time: &str) -> String {
         crate::ssml_utils::create_break_ssml(text_parts, voice, break_time)
     }
-    
+
     /// Get an SSML builder instance for the specified voice
     pub fn get_ssml_builder(&self, voice: &str) -> crate::ssml_utils::SSMLBuilder {
         crate::ssml_utils::SSMLBuilder::new(voice)
     }
-    
+
     /// Validate SSML markup
     fn validate_ssml(&self, ssml: &str) -> Result<(), TTSError> {
         match crate::ssml_utils::validate_ssml(ssml, true) {
@@ -350,56 +393,105 @@ impl TTSClient {
             Err(e) => Err(TTSError::Synthesis(e)),
         }
     }
-    
+
     /// Convert multiple texts to audio data using specified voice
-    pub async fn batch_synthesize_text(&self, texts: &[&str], voice: &str, use_ssml: bool) -> Result<Vec<Vec<u8>>, TTSError> {
+    pub async fn batch_synthesize_text(
+        &self,
+        texts: &[&str],
+        voice: &str,
+        use_ssml: bool,
+    ) -> Result<Vec<Vec<u8>>, TTSError> {
         let mut results = Vec::new();
-        
+
         for (i, text) in texts.iter().enumerate() {
-            println!("Processing batch item {}/{}: {}...", i + 1, texts.len(), &text[..text.len().min(50)]);
-            match self.synthesize_text_with_options(text, voice, use_ssml).await {
+            println!(
+                "Processing batch item {}/{}: {}...",
+                i + 1,
+                texts.len(),
+                &text[..text.len().min(50)]
+            );
+            match self
+                .synthesize_text_with_options(text, voice, use_ssml)
+                .await
+            {
                 Ok(audio_data) => results.push(audio_data),
-                Err(e) => return Err(TTSError::Synthesis(format!("Failed to synthesize batch item {}: {}", i + 1, e))),
+                Err(e) => {
+                    return Err(TTSError::Synthesis(format!(
+                        "Failed to synthesize batch item {}: {}",
+                        i + 1,
+                        e
+                    )))
+                }
             }
         }
-        
+
         Ok(results)
     }
-    
+
     /// Convert multiple texts to audio data concurrently using specified voice
     /// Note: This is a simplified implementation for demonstration
-    pub async fn batch_synthesize_concurrent(&self, texts: &[&str], voice: &str, use_ssml: bool, _max_concurrent: usize) -> Result<Vec<Vec<u8>>, TTSError> {
+    pub async fn batch_synthesize_concurrent(
+        &self,
+        texts: &[&str],
+        voice: &str,
+        use_ssml: bool,
+        _max_concurrent: usize,
+    ) -> Result<Vec<Vec<u8>>, TTSError> {
         // For simplicity, we'll process sequentially but with async/await
         // In a real implementation, you would use proper concurrent processing with Arc<Self>
         let mut results = Vec::new();
-        
+
         for (i, text) in texts.iter().enumerate() {
-            println!("Processing concurrent item {}/{}: {}...", i + 1, texts.len(), &text[..text.len().min(50)]);
-            match self.synthesize_text_with_options(text, voice, use_ssml).await {
+            println!(
+                "Processing concurrent item {}/{}: {}...",
+                i + 1,
+                texts.len(),
+                &text[..text.len().min(50)]
+            );
+            match self
+                .synthesize_text_with_options(text, voice, use_ssml)
+                .await
+            {
                 Ok(audio_data) => results.push(audio_data),
-                Err(e) => return Err(TTSError::Synthesis(format!("Failed to synthesize concurrent item {}: {}", i + 1, e))),
+                Err(e) => {
+                    return Err(TTSError::Synthesis(format!(
+                        "Failed to synthesize concurrent item {}: {}",
+                        i + 1,
+                        e
+                    )))
+                }
             }
         }
-        
+
         Ok(results)
     }
-    
+
     /// Save multiple audio data to files
-    pub async fn batch_save_audio(&self, audio_data_list: &[Vec<u8>], filename_template: &str) -> Result<Vec<String>, TTSError> {
+    pub async fn batch_save_audio(
+        &self,
+        audio_data_list: &[Vec<u8>],
+        filename_template: &str,
+    ) -> Result<Vec<String>, TTSError> {
         let mut saved_files = Vec::new();
-        
+
         for (i, audio_data) in audio_data_list.iter().enumerate() {
             let filename = filename_template.replace("{}", &(i + 1).to_string());
-            
+
             match self.save_audio(audio_data, &filename).await {
                 Ok(_) => {
                     saved_files.push(filename.clone());
                     println!("Saved batch item {}: {}", i + 1, filename);
                 }
-                Err(e) => return Err(TTSError::Synthesis(format!("Failed to save batch item {}: {}", i + 1, e))),
+                Err(e) => {
+                    return Err(TTSError::Synthesis(format!(
+                        "Failed to save batch item {}: {}",
+                        i + 1,
+                        e
+                    )))
+                }
             }
         }
-        
+
         Ok(saved_files)
     }
 }
@@ -416,7 +508,7 @@ mod tests {
             "en-US".to_string(),
             "Female".to_string(),
         );
-        
+
         assert_eq!(voice.name, "en-US-AriaNeural");
         assert_eq!(voice.display_name, "Aria");
         assert_eq!(voice.locale, "en-US");
@@ -432,7 +524,7 @@ mod tests {
             "en-US".to_string(),
             "Female".to_string(),
         );
-        
+
         assert!(voice.matches_language("en"));
         assert!(voice.matches_language("en-US"));
         assert!(!voice.matches_language("fr"));

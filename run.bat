@@ -177,7 +177,7 @@ if "!failed_runs!"=="" (
 )
 
 echo.
-echo Configuration loaded from shared\language_test_config_clean.json
+echo Configuration loaded from shared\language_test_config.json
 
 endlocal
 goto :eof

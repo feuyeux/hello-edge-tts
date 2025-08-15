@@ -116,7 +116,7 @@ Future<void> runSSMLExamples(TTSClient client, String voice, String outputDir) a
       print('\nTesting $name...');
       final audioData = await client.synthesizeSSML(ssml, voice);
       
-      final filename = 'ssml_${name}_example.mp3';
+      final filename = 'edgetts_ssml_${name}_dart_example.mp3';
       final outputPath = path.join(outputDir, filename);
       
       final file = File(outputPath);
@@ -165,7 +165,7 @@ Future<void> runMultilingualExamples(TTSClient client, String outputDir) async {
       
       final audioData = await client.synthesizeText(text, voice);
       
-      final filename = 'multilingual_${lang}_example.mp3';
+      final filename = 'edgetts_${lang}_dart_multilingual.mp3';
       final outputPath = path.join(outputDir, filename);
       
       final file = File(outputPath);
@@ -299,7 +299,7 @@ Future<void> main(List<String> arguments) async {
         // Extract language from voice (e.g., 'en' from 'en-US-AriaNeural')
         final lang = voice.split('-')[0];
         final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-        final filename = 'edge_tts_${lang}_$timestamp.mp3';
+        final filename = 'edgetts_${lang}_dart_$timestamp.mp3';
         outputPath = path.join(outputDir, filename);
       }
 

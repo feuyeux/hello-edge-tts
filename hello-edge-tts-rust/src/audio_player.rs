@@ -1,6 +1,6 @@
 use rodio::{Decoder, OutputStream, Sink};
-use std::io::{BufReader, Cursor};
 use std::fs::File;
+use std::io::{BufReader, Cursor};
 
 /// Custom error type for audio operations
 #[derive(Debug, thiserror::Error)]
@@ -26,7 +26,7 @@ impl AudioPlayer {
     pub fn new() -> Result<Self, AudioError> {
         let (_stream, stream_handle) = OutputStream::try_default()
             .map_err(|e| AudioError::Device(format!("Failed to get audio device: {}", e)))?;
-        
+
         let sink = Sink::try_new(&stream_handle)
             .map_err(|e| AudioError::Device(format!("Failed to create audio sink: {}", e)))?;
 
@@ -38,28 +38,32 @@ impl AudioPlayer {
         let file = File::open(filename)?;
         let source = Decoder::new(BufReader::new(file))
             .map_err(|e| AudioError::Decode(format!("Failed to decode audio file: {}", e)))?;
-        
+
         self.sink.append(source);
-        
+
         // Wait for playback to complete
         self.sink.sleep_until_end();
-        
+
         Ok(())
     }
 
     /// Play audio from raw audio data
-    pub fn play_audio_data(&self, audio_data: Vec<u8>, format_hint: Option<&str>) -> Result<(), AudioError> {
+    pub fn play_audio_data(
+        &self,
+        audio_data: Vec<u8>,
+        format_hint: Option<&str>,
+    ) -> Result<(), AudioError> {
         let _format_hint = format_hint.unwrap_or("mp3"); // Store for potential future use
-        
+
         let cursor = Cursor::new(audio_data);
         let source = Decoder::new(cursor)
             .map_err(|e| AudioError::Decode(format!("Failed to decode audio data: {}", e)))?;
-        
+
         self.sink.append(source);
-        
+
         // Wait for playback to complete
         self.sink.sleep_until_end();
-        
+
         Ok(())
     }
 
@@ -115,10 +119,10 @@ mod tests {
         if let Ok(player) = AudioPlayer::new() {
             player.set_volume(0.5);
             assert_eq!(player.volume(), 0.5);
-            
+
             player.set_volume(1.5); // Should be clamped to 1.0
             assert_eq!(player.volume(), 1.0);
-            
+
             player.set_volume(-0.5); // Should be clamped to 0.0
             assert_eq!(player.volume(), 0.0);
         }

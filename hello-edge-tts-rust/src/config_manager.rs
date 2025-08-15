@@ -6,59 +6,75 @@ use std::path::Path;
 pub struct ConfigManager;
 
 impl ConfigManager {
-    const DEFAULT_CONFIG_PATHS: &'static [&'static str] = &[
-        "./tts_config.json",
-        "~/.tts/config.json",
-    ];
+    const DEFAULT_CONFIG_PATHS: &'static [&'static str] =
+        &["./tts_config.json", "~/.tts/config.json"];
 
     /// Get predefined presets
     pub fn get_presets() -> HashMap<&'static str, TTSConfig> {
         let mut presets = HashMap::new();
-        
+
         presets.insert("default", TTSConfig::default());
-        
-        presets.insert("fast", TTSConfig {
-            rate: "+20%".to_string(),
-            max_concurrent: 5,
-            batch_size: 10,
-            ..TTSConfig::default()
-        });
-        
-        presets.insert("slow", TTSConfig {
-            rate: "-20%".to_string(),
-            max_concurrent: 2,
-            batch_size: 3,
-            ..TTSConfig::default()
-        });
-        
-        presets.insert("high_quality", TTSConfig {
-            output_format: "wav".to_string(),
-            cache_voices: true,
-            max_retries: 5,
-            ..TTSConfig::default()
-        });
-        
-        presets.insert("batch_processing", TTSConfig {
-            max_concurrent: 8,
-            batch_size: 20,
-            cache_voices: true,
-            ..TTSConfig::default()
-        });
-        
-        presets.insert("whisper", TTSConfig {
-            rate: "-10%".to_string(),
-            volume: "50%".to_string(),
-            pitch: "-5%".to_string(),
-            ..TTSConfig::default()
-        });
-        
-        presets.insert("excited", TTSConfig {
-            rate: "+15%".to_string(),
-            pitch: "+10%".to_string(),
-            volume: "110%".to_string(),
-            ..TTSConfig::default()
-        });
-        
+
+        presets.insert(
+            "fast",
+            TTSConfig {
+                rate: "+20%".to_string(),
+                max_concurrent: 5,
+                batch_size: 10,
+                ..TTSConfig::default()
+            },
+        );
+
+        presets.insert(
+            "slow",
+            TTSConfig {
+                rate: "-20%".to_string(),
+                max_concurrent: 2,
+                batch_size: 3,
+                ..TTSConfig::default()
+            },
+        );
+
+        presets.insert(
+            "high_quality",
+            TTSConfig {
+                output_format: "wav".to_string(),
+                cache_voices: true,
+                max_retries: 5,
+                ..TTSConfig::default()
+            },
+        );
+
+        presets.insert(
+            "batch_processing",
+            TTSConfig {
+                max_concurrent: 8,
+                batch_size: 20,
+                cache_voices: true,
+                ..TTSConfig::default()
+            },
+        );
+
+        presets.insert(
+            "whisper",
+            TTSConfig {
+                rate: "-10%".to_string(),
+                volume: "50%".to_string(),
+                pitch: "-5%".to_string(),
+                ..TTSConfig::default()
+            },
+        );
+
+        presets.insert(
+            "excited",
+            TTSConfig {
+                rate: "+15%".to_string(),
+                pitch: "+10%".to_string(),
+                volume: "110%".to_string(),
+                ..TTSConfig::default()
+            },
+        );
+
         presets
     }
 
@@ -83,13 +99,18 @@ impl ConfigManager {
     /// Get a preset configuration
     pub fn get_preset(preset_name: &str) -> Result<TTSConfig, TTSError> {
         let presets = Self::get_presets();
-        presets.get(preset_name)
-            .cloned()
-            .ok_or_else(|| {
-                let available: Vec<_> = presets.keys().collect();
-                let available_str = available.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ");
-                TTSError::Config(format!("Unknown preset '{}'. Available: {}", preset_name, available_str))
-            })
+        presets.get(preset_name).cloned().ok_or_else(|| {
+            let available: Vec<_> = presets.keys().collect();
+            let available_str = available
+                .iter()
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
+            TTSError::Config(format!(
+                "Unknown preset '{}'. Available: {}",
+                preset_name, available_str
+            ))
+        })
     }
 
     /// List available preset names
@@ -152,7 +173,7 @@ mod tests {
         assert!(presets.contains_key("default"));
         assert!(presets.contains_key("fast"));
         assert!(presets.contains_key("slow"));
-        
+
         let fast_config = presets.get("fast").unwrap();
         assert_eq!(fast_config.rate, "+20%");
         assert_eq!(fast_config.max_concurrent, 5);

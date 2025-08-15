@@ -1,9 +1,7 @@
-
-
-/// SSML (Speech Synthesis Markup Language) utilities for Edge TTS
-/// 
-/// This module provides builder patterns and validation for creating
-/// SSML markup for use with Microsoft Edge TTS service.
+//! SSML (Speech Synthesis Markup Language) utilities for Edge TTS
+//!
+//! This module provides builder patterns and validation for creating
+//! SSML markup for use with Microsoft Edge TTS service.
 
 /// Builder for creating SSML markup
 pub struct SSMLBuilder {
@@ -49,7 +47,13 @@ impl SSMLBuilder {
     }
 
     /// Add text with prosody controls
-    pub fn add_prosody(mut self, text: &str, rate: Option<&str>, pitch: Option<&str>, volume: Option<&str>) -> Self {
+    pub fn add_prosody(
+        mut self,
+        text: &str,
+        rate: Option<&str>,
+        pitch: Option<&str>,
+        volume: Option<&str>,
+    ) -> Self {
         let mut attrs = Vec::new();
         if let Some(r) = rate {
             attrs.push(format!("rate=\"{}\"", r));
@@ -67,13 +71,15 @@ impl SSMLBuilder {
             format!(" {}", attrs.join(" "))
         };
 
-        self.elements.push(format!("<prosody{}>{}</prosody>", attr_str, text));
+        self.elements
+            .push(format!("<prosody{}>{}</prosody>", attr_str, text));
         self
     }
 
     /// Add emphasized text
     pub fn add_emphasis(mut self, text: &str, level: &str) -> Self {
-        self.elements.push(format!("<emphasis level=\"{}\">{}</emphasis>", level, text));
+        self.elements
+            .push(format!("<emphasis level=\"{}\">{}</emphasis>", level, text));
         self
     }
 
@@ -85,20 +91,29 @@ impl SSMLBuilder {
 
     /// Add say-as element for special text interpretation
     pub fn add_say_as(mut self, text: &str, interpret_as: &str, format: Option<&str>) -> Self {
-        let format_attr = format.map(|f| format!(" format=\"{}\"", f)).unwrap_or_default();
-        self.elements.push(format!("<say-as interpret-as=\"{}\"{}>{}</say-as>", interpret_as, format_attr, text));
+        let format_attr = format
+            .map(|f| format!(" format=\"{}\"", f))
+            .unwrap_or_default();
+        self.elements.push(format!(
+            "<say-as interpret-as=\"{}\"{}>{}</say-as>",
+            interpret_as, format_attr, text
+        ));
         self
     }
 
     /// Add phoneme pronunciation
     pub fn add_phoneme(mut self, text: &str, alphabet: &str, ph: &str) -> Self {
-        self.elements.push(format!("<phoneme alphabet=\"{}\" ph=\"{}\">{}</phoneme>", alphabet, ph, text));
+        self.elements.push(format!(
+            "<phoneme alphabet=\"{}\" ph=\"{}\">{}</phoneme>",
+            alphabet, ph, text
+        ));
         self
     }
 
     /// Add substitution
     pub fn add_sub(mut self, text: &str, alias: &str) -> Self {
-        self.elements.push(format!("<sub alias=\"{}\">{}</sub>", alias, text));
+        self.elements
+            .push(format!("<sub alias=\"{}\">{}</sub>", alias, text));
         self
     }
 
@@ -120,25 +135,19 @@ impl SSMLBuilder {
 pub struct SSMLValidator;
 
 impl SSMLValidator {
-    const VALID_PROSODY_RATES: &'static [&'static str] = &[
-        "x-slow", "slow", "medium", "fast", "x-fast"
-    ];
+    const VALID_PROSODY_RATES: &'static [&'static str] =
+        &["x-slow", "slow", "medium", "fast", "x-fast"];
 
-    const VALID_PROSODY_PITCHES: &'static [&'static str] = &[
-        "x-low", "low", "medium", "high", "x-high"
-    ];
+    const VALID_PROSODY_PITCHES: &'static [&'static str] =
+        &["x-low", "low", "medium", "high", "x-high"];
 
-    const VALID_PROSODY_VOLUMES: &'static [&'static str] = &[
-        "silent", "x-soft", "soft", "medium", "loud", "x-loud"
-    ];
+    const VALID_PROSODY_VOLUMES: &'static [&'static str] =
+        &["silent", "x-soft", "soft", "medium", "loud", "x-loud"];
 
-    const VALID_EMPHASIS_LEVELS: &'static [&'static str] = &[
-        "strong", "moderate", "reduced"
-    ];
+    const VALID_EMPHASIS_LEVELS: &'static [&'static str] = &["strong", "moderate", "reduced"];
 
-    const VALID_BREAK_STRENGTHS: &'static [&'static str] = &[
-        "none", "x-weak", "weak", "medium", "strong", "x-strong"
-    ];
+    const VALID_BREAK_STRENGTHS: &'static [&'static str] =
+        &["none", "x-weak", "weak", "medium", "strong", "x-strong"];
 
     /// Validate SSML markup and return list of errors
     pub fn validate(ssml: &str) -> Vec<String> {
@@ -165,26 +174,31 @@ impl SSMLValidator {
         errors
     }
 
+    #[allow(clippy::regex_creation_in_loops)]
     fn validate_prosody_elements(ssml: &str, errors: &mut Vec<String>) {
         use regex::Regex;
-        
+
         let prosody_regex = Regex::new(r"<prosody\s+([^>]+)>").unwrap();
-        
+
         for caps in prosody_regex.captures_iter(ssml) {
             let attrs = &caps[1];
-            
+
             if let Some(rate_caps) = Regex::new(r#"rate="([^"]+)""#).unwrap().captures(attrs) {
                 let rate = &rate_caps[1];
-                if !Self::VALID_PROSODY_RATES.contains(&rate) && 
-                   !rate.ends_with('%') && !rate.ends_with("Hz") {
+                if !Self::VALID_PROSODY_RATES.contains(&rate)
+                    && !rate.ends_with('%')
+                    && !rate.ends_with("Hz")
+                {
                     errors.push(format!("Invalid prosody rate: {}", rate));
                 }
             }
 
             if let Some(pitch_caps) = Regex::new(r#"pitch="([^"]+)""#).unwrap().captures(attrs) {
                 let pitch = &pitch_caps[1];
-                if !Self::VALID_PROSODY_PITCHES.contains(&pitch) && 
-                   !pitch.ends_with("Hz") && !pitch.ends_with("st") {
+                if !Self::VALID_PROSODY_PITCHES.contains(&pitch)
+                    && !pitch.ends_with("Hz")
+                    && !pitch.ends_with("st")
+                {
                     errors.push(format!("Invalid prosody pitch: {}", pitch));
                 }
             }
@@ -200,9 +214,9 @@ impl SSMLValidator {
 
     fn validate_emphasis_elements(ssml: &str, errors: &mut Vec<String>) {
         use regex::Regex;
-        
+
         let emphasis_regex = Regex::new(r#"<emphasis\s+level="([^"]+)""#).unwrap();
-        
+
         for caps in emphasis_regex.captures_iter(ssml) {
             let level = &caps[1];
             if !Self::VALID_EMPHASIS_LEVELS.contains(&level) {
@@ -211,14 +225,15 @@ impl SSMLValidator {
         }
     }
 
+    #[allow(clippy::regex_creation_in_loops)]
     fn validate_break_elements(ssml: &str, errors: &mut Vec<String>) {
         use regex::Regex;
-        
+
         let break_regex = Regex::new(r"<break\s+([^>]+)/>").unwrap();
-        
+
         for caps in break_regex.captures_iter(ssml) {
             let attrs = &caps[1];
-            
+
             if let Some(time_caps) = Regex::new(r#"time="([^"]+)""#).unwrap().captures(attrs) {
                 let time = &time_caps[1];
                 if !time.ends_with('s') && !time.ends_with("ms") {
@@ -226,7 +241,9 @@ impl SSMLValidator {
                 }
             }
 
-            if let Some(strength_caps) = Regex::new(r#"strength="([^"]+)""#).unwrap().captures(attrs) {
+            if let Some(strength_caps) =
+                Regex::new(r#"strength="([^"]+)""#).unwrap().captures(attrs)
+            {
                 let strength = &strength_caps[1];
                 if !Self::VALID_BREAK_STRENGTHS.contains(&strength) {
                     errors.push(format!("Invalid break strength: {}", strength));
@@ -241,13 +258,27 @@ pub struct SSMLTemplates;
 
 impl SSMLTemplates {
     /// Create SSML using a predefined template
-    pub fn create_from_template(template_name: &str, text: &str, voice: &str) -> Result<String, String> {
+    pub fn create_from_template(
+        template_name: &str,
+        text: &str,
+        voice: &str,
+    ) -> Result<String, String> {
         match template_name {
-            "slow_speech" => Ok(SSMLBuilder::new(voice).add_prosody(text, Some("slow"), None, None).build()),
-            "fast_speech" => Ok(SSMLBuilder::new(voice).add_prosody(text, Some("fast"), None, None).build()),
-            "whisper" => Ok(SSMLBuilder::new(voice).add_prosody(text, Some("slow"), None, Some("x-soft")).build()),
-            "excited" => Ok(SSMLBuilder::new(voice).add_prosody(text, Some("fast"), Some("high"), Some("loud")).build()),
-            "calm" => Ok(SSMLBuilder::new(voice).add_prosody(text, Some("slow"), Some("low"), Some("soft")).build()),
+            "slow_speech" => Ok(SSMLBuilder::new(voice)
+                .add_prosody(text, Some("slow"), None, None)
+                .build()),
+            "fast_speech" => Ok(SSMLBuilder::new(voice)
+                .add_prosody(text, Some("fast"), None, None)
+                .build()),
+            "whisper" => Ok(SSMLBuilder::new(voice)
+                .add_prosody(text, Some("slow"), None, Some("x-soft"))
+                .build()),
+            "excited" => Ok(SSMLBuilder::new(voice)
+                .add_prosody(text, Some("fast"), Some("high"), Some("loud"))
+                .build()),
+            "calm" => Ok(SSMLBuilder::new(voice)
+                .add_prosody(text, Some("slow"), Some("low"), Some("soft"))
+                .build()),
             "emphasis_strong" => Ok(SSMLBuilder::new(voice).add_emphasis(text, "strong").build()),
             "with_pauses" => {
                 if text.contains('.') {
@@ -264,10 +295,13 @@ impl SSMLTemplates {
                 } else {
                     Ok(SSMLBuilder::new(voice).add_text(text).build())
                 }
-            },
+            }
             _ => {
                 let available = "slow_speech, fast_speech, whisper, excited, calm, emphasis_strong, with_pauses";
-                Err(format!("Unknown template '{}'. Available: {}", template_name, available))
+                Err(format!(
+                    "Unknown template '{}'. Available: {}",
+                    template_name, available
+                ))
             }
         }
     }
@@ -276,12 +310,12 @@ impl SSMLTemplates {
     pub fn get_available_templates() -> Vec<&'static str> {
         vec![
             "slow_speech",
-            "fast_speech", 
+            "fast_speech",
             "whisper",
             "excited",
             "calm",
             "emphasis_strong",
-            "with_pauses"
+            "with_pauses",
         ]
     }
 }
@@ -289,17 +323,25 @@ impl SSMLTemplates {
 /// Validate SSML markup
 pub fn validate_ssml(ssml: &str, raise_on_error: bool) -> Result<Vec<String>, String> {
     let errors = SSMLValidator::validate(ssml);
-    
+
     if !errors.is_empty() && raise_on_error {
         return Err(format!("SSML validation failed: {}", errors.join("; ")));
     }
-    
+
     Ok(errors)
 }
 
 /// Create SSML with prosody controls
-pub fn create_ssml(text: &str, voice: &str, rate: Option<&str>, pitch: Option<&str>, volume: Option<&str>) -> String {
-    SSMLBuilder::new(voice).add_prosody(text, rate, pitch, volume).build()
+pub fn create_ssml(
+    text: &str,
+    voice: &str,
+    rate: Option<&str>,
+    pitch: Option<&str>,
+    volume: Option<&str>,
+) -> String {
+    SSMLBuilder::new(voice)
+        .add_prosody(text, rate, pitch, volume)
+        .build()
 }
 
 /// Create SSML with emphasis
@@ -310,14 +352,14 @@ pub fn create_emphasis_ssml(text: &str, voice: &str, level: &str) -> String {
 /// Create SSML with breaks between text parts
 pub fn create_break_ssml(text_parts: &[&str], voice: &str, break_time: &str) -> String {
     let mut builder = SSMLBuilder::new(voice);
-    
+
     for (i, part) in text_parts.iter().enumerate() {
         builder = builder.add_text(part);
         if i < text_parts.len() - 1 {
             builder = builder.add_break(break_time);
         }
     }
-    
+
     builder.build()
 }
 
@@ -330,7 +372,7 @@ mod tests {
         let ssml = SSMLBuilder::new("en-US-AriaNeural")
             .add_text("Hello, world!")
             .build();
-        
+
         assert!(ssml.contains("<speak"));
         assert!(ssml.contains("en-US-AriaNeural"));
         assert!(ssml.contains("Hello, world!"));
@@ -341,7 +383,7 @@ mod tests {
         let ssml = SSMLBuilder::new("en-US-AriaNeural")
             .add_prosody("Hello", Some("slow"), Some("high"), Some("loud"))
             .build();
-        
+
         assert!(ssml.contains("rate=\"slow\""));
         assert!(ssml.contains("pitch=\"high\""));
         assert!(ssml.contains("volume=\"loud\""));
@@ -352,7 +394,7 @@ mod tests {
         let ssml = SSMLBuilder::new("en-US-AriaNeural")
             .add_emphasis("Important!", "strong")
             .build();
-        
+
         assert!(ssml.contains("<emphasis level=\"strong\">Important!</emphasis>"));
     }
 
@@ -363,7 +405,7 @@ mod tests {
             .add_break("2s")
             .add_text("Second part")
             .build();
-        
+
         assert!(ssml.contains("<break time=\"2s\"/>"));
     }
 
@@ -372,7 +414,7 @@ mod tests {
         let ssml = SSMLBuilder::new("en-US-AriaNeural")
             .add_text("Hello")
             .build();
-        
+
         let errors = SSMLValidator::validate(&ssml);
         assert!(errors.is_empty());
     }
@@ -386,7 +428,8 @@ mod tests {
 
     #[test]
     fn test_templates() {
-        let result = SSMLTemplates::create_from_template("slow_speech", "Hello", "en-US-AriaNeural");
+        let result =
+            SSMLTemplates::create_from_template("slow_speech", "Hello", "en-US-AriaNeural");
         assert!(result.is_ok());
         assert!(result.unwrap().contains("rate=\"slow\""));
     }

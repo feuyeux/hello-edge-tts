@@ -104,7 +104,7 @@ async def main():
             # Extract language from voice (e.g., 'en' from 'en-US-AriaNeural')
             lang = args.voice.split('-')[0]
             timestamp = int(time.time())
-            output_file = os.path.join(output_dir, f"edge_tts_{lang}_{timestamp}.mp3")
+            output_file = os.path.join(output_dir, f"edgetts_{lang}_python_{timestamp}.mp3")
         
         print(f"Text: {args.text}")
         print(f"Voice: {args.voice}")
@@ -151,10 +151,10 @@ async def demo_ssml(client):
     print("=== SSML Demonstration ===")
     
     ssml_examples = [
-        ('<speak><prosody rate="slow">This is spoken slowly.</prosody></speak>', "slow_speech.mp3"),
-        ('<speak><prosody pitch="high">This is high pitch.</prosody></speak>', "high_pitch.mp3"),
-        ('<speak>This is <emphasis level="strong">strongly emphasized</emphasis> text.</speak>', "emphasis.mp3"),
-        ('<speak>First sentence.<break time="2s"/>After a long pause.</speak>', "with_break.mp3")
+        ('<speak><prosody rate="slow">This is spoken slowly.</prosody></speak>', "edgetts_ssml_slow_python.mp3"),
+        ('<speak><prosody pitch="high">This is high pitch.</prosody></speak>', "edgetts_ssml_pitch_python.mp3"),
+        ('<speak>This is <emphasis level="strong">strongly emphasized</emphasis> text.</speak>', "edgetts_ssml_emphasis_python.mp3"),
+        ('<speak>First sentence.<break time="2s"/>After a long pause.</speak>', "edgetts_ssml_break_python.mp3")
     ]
     
     for ssml, filename in ssml_examples:
@@ -187,7 +187,7 @@ async def demo_batch(client):
         print(f"Processing text {i}: {text[:30]}...")
         try:
             audio_data = await client.synthesize_text(text, voice)
-            filename = f"output/batch_{i}.mp3"
+            filename = f"output/edgetts_batch_{i}_python.mp3"
             await client.save_audio(audio_data, filename)
             print(f"Saved: {filename}")
         except Exception as e:
@@ -207,7 +207,7 @@ async def demo_voices(client):
         print(f"Generating with voice: {voice}")
         try:
             audio_data = await client.synthesize_text(text, voice)
-            filename = f"output/voice_{voice.replace('-', '_')}.mp3"
+            filename = f"output/edgetts_voice_{voice.replace('-', '_')}_python.mp3"
             await client.save_audio(audio_data, filename)
             print(f"Saved: {filename}")
         except Exception as e:

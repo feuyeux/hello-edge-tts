@@ -209,7 +209,7 @@ public class HelloTTS {
                         byte[] audioData = audioFuture.get();
                         
                         // Save to file
-                        String filename = "demo_" + language + ".mp3";
+                        String filename = "edgetts_" + language + "_java_demo.mp3";
                         CompletableFuture<Void> saveFuture = client.saveAudio(audioData, filename);
                         saveFuture.get();
                         
@@ -330,7 +330,7 @@ public class HelloTTS {
         // Extract language from voice (e.g., 'en' from 'en-US-AriaNeural')
         String lang = voice.split("-")[0];
         long timestamp = System.currentTimeMillis() / 1000;
-        return "edge_tts_" + lang + "_" + timestamp + ".mp3";
+        return "edgetts_" + lang + "_java_" + timestamp + ".mp3";
     }
     
     /**

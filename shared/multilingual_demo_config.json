@@ -1,0 +1,100 @@
+{
+  "languages": [
+    {
+      "code": "zh-cn",
+      "name": "Chinese (Mandarin)",
+      "flag": "🇨🇳",
+      "text": "你好，我可以为你朗读。",
+      "voice": "zh-CN-XiaoxiaoNeural",
+      "alt_voice": "zh-CN-YunxiNeural"
+    },
+    {
+      "code": "en-us",
+      "name": "English (US)",
+      "flag": "🇺🇸",
+      "text": "Hello, I can read for you.",
+      "voice": "en-US-AriaNeural",
+      "alt_voice": "en-US-DavisNeural"
+    },
+    {
+      "code": "de-de",
+      "name": "German",
+      "flag": "🇩🇪",
+      "text": "Hallo, ich kann es für dich vorlesen.",
+      "voice": "de-DE-KatjaNeural",
+      "alt_voice": "de-DE-ConradNeural"
+    },
+    {
+      "code": "fr-fr",
+      "name": "French",
+      "flag": "🇫🇷",
+      "text": "Bonjour, je peux vous lire ce texte.",
+      "voice": "fr-FR-DeniseNeural",
+      "alt_voice": "fr-FR-HenriNeural"
+    },
+    {
+      "code": "es-es",
+      "name": "Spanish",
+      "flag": "🇪🇸",
+      "text": "Hola, puedo leer esto para ti.",
+      "voice": "es-ES-ElviraNeural",
+      "alt_voice": "es-ES-AlvaroNeural"
+    },
+    {
+      "code": "it-it",
+      "name": "Italian",
+      "flag": "🇮🇹",
+      "text": "Ciao, posso leggerlo per te.",
+      "voice": "it-IT-ElsaNeural",
+      "alt_voice": "it-IT-DiegoNeural"
+    },
+    {
+      "code": "ru-ru",
+      "name": "Russian",
+      "flag": "🇷🇺",
+      "text": "Здравствуйте, я могу прочитать это для вас.",
+      "voice": "ru-RU-SvetlanaNeural",
+      "alt_voice": "ru-RU-DmitryNeural"
+    },
+    {
+      "code": "el-gr",
+      "name": "Greek",
+      "flag": "🇬🇷",
+      "text": "Γεια σας, μπορώ να το διαβάσω για εσάς.",
+      "voice": "el-GR-AthinaNeural",
+      "alt_voice": "el-GR-NestorNeural"
+    },
+    {
+      "code": "ar-sa",
+      "name": "Arabic",
+      "flag": "🇸🇦",
+      "text": "مرحبًا، أستطيع قراءة هذا لك.",
+      "voice": "ar-SA-ZariyahNeural",
+      "alt_voice": "ar-SA-HamedNeural"
+    },
+    {
+      "code": "hi-in",
+      "name": "Hindi",
+      "flag": "🇮🇳",
+      "text": "नमस्ते, मैं आपके लिए इसे पढ़ कर सुना सकता हूँ.",
+      "voice": "hi-IN-SwaraNeural",
+      "alt_voice": "hi-IN-MadhurNeural"
+    },
+    {
+      "code": "ja-jp",
+      "name": "Japanese",
+      "flag": "🇯🇵",
+      "text": "こんにちは、これを読み上げることができます。",
+      "voice": "ja-JP-NanamiNeural",
+      "alt_voice": "ja-JP-KeitaNeural"
+    },
+    {
+      "code": "ko-kr",
+      "name": "Korean",
+      "flag": "🇰🇷",
+      "text": "안녕하세요, 제가 읽어 드릴 수 있습니다.",
+      "voice": "ko-KR-SunHiNeural",
+      "alt_voice": "ko-KR-InJoonNeural"
+    }
+  ]
+}

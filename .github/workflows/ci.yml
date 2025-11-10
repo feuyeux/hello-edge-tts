@@ -23,7 +23,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     
     - name: Cache pip dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('python/requirements.txt') }}
@@ -71,7 +71,7 @@ jobs:
         dart-version: ${{ matrix.dart-version }}
     
     - name: Cache Dart dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           dart/.dart_tool
@@ -127,7 +127,7 @@ jobs:
         components: rustfmt, clippy
     
     - name: Cache Rust dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           rust/target
@@ -183,7 +183,7 @@ jobs:
         distribution: 'temurin'
     
     - name: Cache Maven dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('java/pom.xml') }}
